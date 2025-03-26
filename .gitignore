@@ -6,3 +6,4 @@ __pycache__/
 # files in result folder
 Results/*.pkl
 ```
+wandb
