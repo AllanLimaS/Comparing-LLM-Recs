@@ -1,5 +1,5 @@
 import math
-from Utils.utils import clean_movie_name
+from Utils.utils import clean_movie_name, extract_movie_titles
 
 def calculate_average_metrics(results):
     """
@@ -58,7 +58,8 @@ def calculate_metrics(query, relevants):
     - dict: Dicionário com as métricas calculadas.
     """
 
-    recommendations_set = {clean_movie_name(movie) for movie in query.split("; ")}
+    #recommendations_set = {clean_movie_name(movie) for movie in query.split("; ")}
+    recommendations_set = {clean_movie_name(movie) for movie in extract_movie_titles(query)}
     ground_truth_set = {clean_movie_name(relevants)}
 
     # Calcula o HirRate (eficácia)
