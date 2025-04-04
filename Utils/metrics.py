@@ -3,85 +3,106 @@ from Utils.utils import clean_movie_name, extract_movie_titles
 
 def calculate_average_metrics(results):
     """
-    Calcula a média das métricas 'hit', 'precision', 'recall' e 'ndcg' dentro do dicionário results.
-    
+    Calcula a média geral das métricas e a média das métricas apenas quando gt_in_candidate_set == True.
+
     Parâmetros:
         results (dict): Dicionário contendo os resultados das recomendações.
-    
+
     Retorna:
-        dict: Dicionário com a média de cada métrica.
+        dict: Dicionário com a média de cada métrica, geral e filtrada.
     """
-    
-    # Inicializa um dicionário para armazenar a soma das métricas
-    metric_sums = {
-        'hit': 0,
-        'precision': 0,
-        'recall': 0,
-        'ndcg': 0
+
+    # Inicializa as somas das métricas
+    total_metrics = {
+    'avg_HitRate@5': 0, 'avg_Precision@5': 0, 'avg_Recall@5': 0, 'avg_NDCG@5': 0,
+    'avg_HitRate@10': 0, 'avg_Precision@10': 0, 'avg_Recall@10': 0, 'avg_NDCG@10': 0
     }
-    
-    # Contador para armazenar quantas recomendações foram processadas
-    num_recommendations = 0
-    
-    # Percorre as chaves e valores do dicionário results
+
+    filtered_metrics = {
+        'avg_GT_HitRate@5': 0, 'avg_GT_Precision@5': 0, 'avg_GT_Recall@5': 0, 'avg_GT_NDCG@5': 0,
+        'avg_GT_HitRate@10': 0, 'avg_GT_Precision@10': 0, 'avg_GT_Recall@10': 0, 'avg_GT_NDCG@10': 0
+    }
+
+    count_total = 0
+    count_filtered = 0
+
     for key, value in results.items():
-        # Verifica se a chave é um número inteiro (ou seja, um índice de recomendação)
         if isinstance(key, int) and isinstance(value, dict):
-            # Percorre cada métrica relevante e soma os valores
-            for metric in metric_sums.keys():
-                if metric in value:
-                    metric_sums[metric] += value[metric]
-            
-            # Incrementa o contador de recomendações processadas
-            num_recommendations += 1
-    
-    # Verifica se há recomendações para evitar divisão por zero
-    if num_recommendations == 0:
-        return {metric: 0 for metric in metric_sums}  # Retorna 0 para todas as métricas
-    
-    # Calcula a média de cada métrica
-    average_metrics = {
-        metric: total / num_recommendations for metric, total in metric_sums.items()
+            # Soma para total (@5 e @10)
+            total_metrics['avg_HitRate@5'] += value.get('rec_HitRate@5', 0)
+            total_metrics['avg_Precision@5'] += value.get('rec_Precision@5', 0)
+            total_metrics['avg_Recall@5'] += value.get('rec_Recall@5', 0)
+            total_metrics['avg_NDCG@5'] += value.get('rec_NDCG@5', 0)
+
+            total_metrics['avg_HitRate@10'] += value.get('rec_HitRate@10', 0)
+            total_metrics['avg_Precision@10'] += value.get('rec_Precision@10', 0)
+            total_metrics['avg_Recall@10'] += value.get('rec_Recall@10', 0)
+            total_metrics['avg_NDCG@10'] += value.get('rec_NDCG@10', 0)
+
+            count_total += 1
+
+            # Soma apenas para os casos filtrados
+            if value.get('gt_in_candidate_set') == True:
+                filtered_metrics['avg_GT_HitRate@5'] += value.get('rec_HitRate@5', 0)
+                filtered_metrics['avg_GT_Precision@5'] += value.get('rec_Precision@5', 0)
+                filtered_metrics['avg_GT_Recall@5'] += value.get('rec_Recall@5', 0)
+                filtered_metrics['avg_GT_NDCG@5'] += value.get('rec_NDCG@5', 0)
+
+                filtered_metrics['avg_GT_HitRate@10'] += value.get('rec_HitRate@10', 0)
+                filtered_metrics['avg_GT_Precision@10'] += value.get('rec_Precision@10', 0)
+                filtered_metrics['avg_GT_Recall@10'] += value.get('rec_Recall@10', 0)
+                filtered_metrics['avg_GT_NDCG@10'] += value.get('rec_NDCG@10', 0)
+
+                count_filtered += 1
+
+    # Cálculo das médias
+    average_total = {
+        metric: total / count_total if count_total else 0 for metric, total in total_metrics.items()
     }
-    
-    return average_metrics
+
+    average_filtered = {
+        metric: total / count_filtered if count_filtered else 0 for metric, total in filtered_metrics.items()
+    }
+
+    # Junta tudo em um único dicionário
+    final_result = average_total.copy()
+    for key, value in average_filtered.items():
+        final_result[key] = value
+    return final_result
 
 def calculate_metrics(query, relevants):
     """
-    Calcula as métricas de precisão, revocação e F1 para uma lista de recomendações e itens relevantes.
+    Calcula as métricas de precisão, recall, hit e ndcg para @5 e @10.
     
     Args:
-    - query (list): Lista de itens recomendados.
+    - query (list): Lista de itens recomendados (ordenados por relevância).
     - relevants (list): Lista de itens relevantes.
     
     Returns:
-    - dict: Dicionário com as métricas calculadas.
+    - dict: Dicionário com as métricas calculadas para @5 e @10.
     """
 
-    #recommendations_set = {clean_movie_name(movie) for movie in query.split("; ")}
-    recommendations_set = {clean_movie_name(movie) for movie in extract_movie_titles(query)}
-    ground_truth_set = {clean_movie_name(relevants)}
+    metrics = {}
 
-    # Calcula o HirRate (eficácia)
-    hit = calculate_hit(recommendations_set,ground_truth_set)
+    for k in [5, 10]:
 
-    # Calcula a precisão
-    precision = calculate_precision(recommendations_set, ground_truth_set)
-    
-    # Calcula a revocação
-    recall = calculate_recall(recommendations_set, ground_truth_set)
-    
-    # Calcula o NDGC
-    ndcg = calculate_ndcg(recommendations_set, ground_truth_set)
+        recommendations_set = {clean_movie_name(movie) for movie in extract_movie_titles(query)}
+        ground_truth_set = {clean_movie_name(relevants)}
 
-    return {
-        "recommendation_set": recommendations_set,
-        "ground_truth_set": ground_truth_set,
-        "hit": hit,
-        "precision": precision,
-        "recall": recall,
-        "ndcg": ndcg
-    }
+        recommendations_set = list(recommendations_set)[:k]
+
+        hit = calculate_hit(recommendations_set, ground_truth_set)
+        precision = calculate_precision(recommendations_set, ground_truth_set)
+        recall = calculate_recall(recommendations_set, ground_truth_set)
+        ndcg = calculate_ndcg(recommendations_set, ground_truth_set)
+
+        metrics[f"hit@{k}"] = hit
+        metrics[f"precision@{k}"] = precision
+        metrics[f"recall@{k}"] = recall
+        metrics[f"ndcg@{k}"] = ndcg
+
+    return metrics
+
 
 def calculate_hit(query, relevants):
     """

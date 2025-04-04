@@ -55,72 +55,114 @@ def recommendation_workflow(config, wandb_key, dataset, prompt_template, prompt_
             results[i]['candidate_set'] = candidate_items
 
             # verifica se o ground_truth está no candidate_set
-            results[i]['gt_in_candidate_set'] = "yes" if any(results[i]['ground_truth'].lower() in candidate.lower() for candidate in results[i]['candidate_set']) else "no"
+            results[i]['gt_in_candidate_set'] = True if any(results[i]['ground_truth'].lower() in candidate.lower() for candidate in results[i]['candidate_set']) else False
 
-            # pipeline 
+            if results[i]['gt_in_candidate_set'] == True:
 
-            # STEP 1
-            input_1 = prompt_template['Preference'].format(', '.join(watched_mv[-lenlimit:]))
-            results[i]['input_1'] = input_1
-            response = utils.query_lm_studio(config["model_name"],config["Temperature"],prompt_template['System_prompt'],input_1,config["max_tokens"])
-            predictions_1 = response
-            results[i]['predictions_1'] = predictions_1
+                # pipeline 
 
-            # STEP 2
-            input_2 = prompt_template['Featured_movies'].format(', '.join(watched_mv[-lenlimit:]), predictions_1)
-            results[i]['input_2'] = input_2
-            response = utils.query_lm_studio(config["model_name"],config["Temperature"],prompt_template['System_prompt'],input_2,config["max_tokens"])
-            predictions_2 = response
-            results[i]['predictions_2'] = predictions_2
+                # STEP 1
+                input_1 = prompt_template['Preference'].format(', '.join(watched_mv[-lenlimit:]))
+                results[i]['input_1'] = input_1
+                response = utils.query_lm_studio(config["model_name"],config["Temperature"],prompt_template['System_prompt'],input_1,config["max_tokens"])
+                predictions_1 = response
+                results[i]['predictions_1'] = predictions_1
 
-            # STEP 3
-            input_3 = prompt_template['Recommendation'].format(', '.join(candidate_items),', '.join(watched_mv[-lenlimit:]), predictions_1, predictions_2)
-            results[i]['input_3'] = input_3
-            response = utils.query_lm_studio(config["model_name"],config["Temperature"],prompt_template['System_prompt'],input_3,config["max_tokens"])
-            predictions_3 = response
-            results[i]['predictions_3'] = predictions_3
+                # STEP 2
+                input_2 = prompt_template['Featured_movies'].format(', '.join(watched_mv[-lenlimit:]), predictions_1)
+                results[i]['input_2'] = input_2
+                response = utils.query_lm_studio(config["model_name"],config["Temperature"],prompt_template['System_prompt'],input_2,config["max_tokens"])
+                predictions_2 = response
+                results[i]['predictions_2'] = predictions_2
+
+                # STEP 3
+                input_3 = prompt_template['Recommendation'].format(', '.join(candidate_items),', '.join(watched_mv[-lenlimit:]), predictions_1, predictions_2)
+                results[i]['input_3'] = input_3
+                response = utils.query_lm_studio(config["model_name"],config["Temperature"],prompt_template['System_prompt'],input_3,config["max_tokens"])
+                predictions_3 = response
+                results[i]['predictions_3'] = predictions_3
 
 
-            # STEP 4 - Formate the response
-            if prompt_format:
-                input_4 = prompt_format['Prompt'].format(predictions_3)
-                response = utils.query_lm_studio(config["model_name"],config["Temperature"],prompt_format['System_prompt'],input_4,config["max_tokens"])
-                recommendations = response
-                results[i]['recommendations'] = recommendations
-                # Calculate metrics
-                run_metrics = metrics.calculate_metrics(results[i]['recommendations'], results[i]['ground_truth'])    
-            else:
-                # Calculate metrics
-                run_metrics = metrics.calculate_metrics(results[i]['predictions_3'], results[i]['ground_truth'])    
-            
-            results[i]['hit'] = run_metrics['hit']
-            results[i]['precision'] = run_metrics['precision']
-            results[i]['recall'] = run_metrics['recall']
-            results[i]['ndcg'] = run_metrics['ndcg']
+                # STEP 4 - Formate the response
+                if prompt_format:
+                    input_4 = prompt_format['Prompt'].format(predictions_3)
+                    response = utils.query_lm_studio(config["model_name"],config["Temperature"],prompt_format['System_prompt'],input_4,config["max_tokens"])
+                    recommendations = response
+                    results[i]['recommendations'] = recommendations
+
+
+                # Calculate metrics 
+                    run_metrics = metrics.calculate_metrics(results[i]['recommendations'], results[i]['ground_truth'])    
+                else:
+                    run_metrics = metrics.calculate_metrics(results[i]['predictions_3'], results[i]['ground_truth'])    
+                
+
+                results[i]['rec_HitRate@5'] = run_metrics['hit@5']
+                results[i]['rec_HitRate@10'] = run_metrics['hit@10']
+                results[i]['rec_Precision@5'] = run_metrics['precision@5']
+                results[i]['rec_Precision@10'] = run_metrics['precision@10']
+                results[i]['rec_Recall@5'] = run_metrics['recall@5']
+                results[i]['rec_Recall@10'] = run_metrics['recall@10']
+                results[i]['rec_NDCG@5'] = run_metrics['ndcg@5']
+                results[i]['rec_NDCG@10'] = run_metrics['ndcg@10']
+                
+            else: # Caso o ground_truth não esteja no candidate_set
+                results[i]['input_1'] = ""
+                results[i]['predictions_1'] = ""
+                results[i]['input_2'] = ""
+                results[i]['predictions_2'] = ""
+                results[i]['input_3'] = ""
+                results[i]['predictions_3'] = ""
+                results[i]['rec_HitRate@5'] = 0
+                results[i]['rec_HitRate@10'] = 0
+                results[i]['rec_Precision@5'] = 0
+                results[i]['rec_Precision@10'] = 0
+                results[i]['rec_Recall@5'] = 0
+                results[i]['rec_Recall@10'] = 0
+                results[i]['rec_NDCG@5'] = 0
+                results[i]['rec_NDCG@10'] = 0
+
 
             if run_wandb:
                 # Log do wandb
                 run.log({
-                    'Hit': results[i].get('hit', 0),  # Usa 0 como valor padrão se a chave não existir
-                    'Precision': results[i].get('precision', 0),
-                    'Recall': results[i].get('recall', 0),
-                    'NDCG': results[i].get('ndcg', 0),
-                    'result': "Ground Truth:" +results[i].get('ground_truth','') +"\n\n"+  results[i].get('input_3', '') + results[i].get('predictions_3', ''),
+                    'rec_HitRate@5': results[i].get('rec_HitRate@5', 0),  # Usa 0 como valor padrão se a chave não existir
+                    'rec_HitRate@10': results[i].get('rec_HitRate@10', 0),  
+                    'rec_Precision@5': results[i].get('rec_Precision@5', 0),
+                    'rec_Precision@10': results[i].get('rec_Precision@10', 0),
+                    'rec_Recall@5': results[i].get('rec_Recall@5', 0),
+                    'rec_Recall@10': results[i].get('rec_Recall@10', 0),
+                    'rec_NDCG@5': results[i].get('rec_NDCG@5', 0),
+                    'rec_NDCG@10': results[i].get('rec_NDCG@10', 0),
+                    'Resumo': "Ground Truth:" +results[i].get('ground_truth','') +"\n\n"+  results[i].get('input_3', '') + results[i].get('predictions_3', ''),
                 })
 
         results['end_time'] = time.time()
         results['runtime'] = results['end_time'] - results['start_time']
 
         # calculate average metrics
-        results['metrics'] = metrics.calculate_average_metrics(results)
+        results['avg_metrics'] = metrics.calculate_average_metrics(results)
 
         if run_wandb:
             # Atualiza o wandb com os resultados
             run.log({
-                'HitRate@10': results['metrics']['hit'],
-                'Precision': results['metrics']['precision'],
-                'Recall': results['metrics']['recall'],
-                'NDCG@10': results['metrics']['ndcg']
+                'avg_HitRate@5': results['avg_metrics']['avg_HitRate@5'],
+                'avg_HitRate@10': results['avg_metrics']['avg_HitRate@10'],
+                'avg_Precision@5': results['avg_metrics']['avg_Precision@5'],
+                'avg_Precision@10': results['avg_metrics']['avg_Precision@10'],
+                'avg_Recall@5': results['avg_metrics']['avg_Recall@5'],
+                'avg_Recall@10': results['avg_metrics']['avg_Recall@10'],
+                'avg_NDCG@5': results['avg_metrics']['avg_NDCG@5'],
+                'avg_NDCG@10': results['avg_metrics']['avg_NDCG@10'],
+                
+                'avg_GT_HitRate@5': results['avg_metrics']['avg_GT_HitRate@5'],
+                'avg_GT_HitRate@10': results['avg_metrics']['avg_GT_HitRate@10'],
+                'avg_GT_Precision@5': results['avg_metrics']['avg_GT_Precision@5'],
+                'avg_GT_Precision@10': results['avg_metrics']['avg_GT_Precision@10'],
+                'avg_GT_Recall@5': results['avg_metrics']['avg_GT_Recall@5'],
+                'avg_GT_Recall@10': results['avg_metrics']['avg_GT_Recall@10'],
+                'avg_GT_NDCG@5': results['avg_metrics']['avg_GT_NDCG@5'],
+                'avg_GT_NDCG@10': results['avg_metrics']['avg_GT_NDCG@10']
             })
 
         # save dictionary to pickle file

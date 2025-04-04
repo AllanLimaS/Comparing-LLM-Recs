@@ -17,3 +17,18 @@
     Vulkan
     tempo levemente melhor que ROCm
     FLASH ATTENTION deixou extremamente lento. 
+
+
+# orientação 31/03/2025 
+
+## oque fazer 
+
+fazer teste sem a filtragem colaborativa ( passando todos os filmes dentro do prompt )
+implementar a função para executar as recomendações apenas para quem tem gt 
+verificar as possibilidades do finetuning 
+
+## oque foi feito 
+
+Ajustado o pipeline para mandar para o LLM apenas quando existe o GT no candidate_set
+ajustado os calculos de métricas para calcular os @5 e @10 de cada métrica
+ajustado os logs no wandb / retirando o uso do wandb pois acabou o tempo free 
