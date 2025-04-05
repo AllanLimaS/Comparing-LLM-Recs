@@ -31,4 +31,8 @@ verificar as possibilidades do finetuning
 
 Ajustado o pipeline para mandar para o LLM apenas quando existe o GT no candidate_set
 ajustado os calculos de métricas para calcular os @5 e @10 de cada métrica
-ajustado os logs no wandb / retirando o uso do wandb pois acabou o tempo free 
+ajustado os logs no wandb 
+percebi que nao tenho mais acesso ao wandb
+retirando o uso do wandb 
+pesquisando alternativas para comparar as configurações e resultados
+criando um aplicativo StreamLib 

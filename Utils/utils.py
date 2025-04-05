@@ -39,6 +39,7 @@ def save_result_to_pickle(results,config):
     # Gera um timestamp para garantir nomes únicos
     timestamp = datetime.now().strftime('%Y_%m_%d-%H_%M_%S')
     arq_name = f'{config["dataset"]}-zs-nir-su{config['nsu']}-ci{config['nci']}-{config["model_name"]}-{timestamp}.pkl'
+    arq_name = f'{config["dataset"]}-{config["model_name"]}-{timestamp}.pkl'
     with open(f'Results/{arq_name}', 'wb') as file:
         pickle.dump(results, file)
     return f'Results/{arq_name}'

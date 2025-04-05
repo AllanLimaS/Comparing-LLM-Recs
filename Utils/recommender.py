@@ -1,13 +1,9 @@
-import wandb
 import random
 import time
 from tqdm.notebook import tqdm
 from Utils import metrics,utils
 
-def recommendation_workflow(config, wandb_key, dataset, prompt_template, prompt_format, run_wandb):
-
-    if run_wandb: 
-        wandb.login(key=wandb_key)
+def recommendation_workflow(config, dataset, prompt_template, prompt_format):
 
     id_list = list(range(0, len(dataset)))
     #assert(len(id_list) == 943) # aqui é verificado se a lista possue exatamente essa quantidade
@@ -25,10 +21,6 @@ def recommendation_workflow(config, wandb_key, dataset, prompt_template, prompt_
     lenlimit = config["lenlimit"]
 
     results['start_time'] = time.time()
-
-    if run_wandb:
-        # inicia a run do wandb
-        run = wandb.init(project="test",config=config)
 
     if config["test_run"]:
         id_list = id_list[:config["test_run"]] # Define a quantiadade que será processado
@@ -122,20 +114,7 @@ def recommendation_workflow(config, wandb_key, dataset, prompt_template, prompt_
                 results[i]['rec_NDCG@5'] = 0
                 results[i]['rec_NDCG@10'] = 0
 
-
-            if run_wandb:
-                # Log do wandb
-                run.log({
-                    'rec_HitRate@5': results[i].get('rec_HitRate@5', 0),  # Usa 0 como valor padrão se a chave não existir
-                    'rec_HitRate@10': results[i].get('rec_HitRate@10', 0),  
-                    'rec_Precision@5': results[i].get('rec_Precision@5', 0),
-                    'rec_Precision@10': results[i].get('rec_Precision@10', 0),
-                    'rec_Recall@5': results[i].get('rec_Recall@5', 0),
-                    'rec_Recall@10': results[i].get('rec_Recall@10', 0),
-                    'rec_NDCG@5': results[i].get('rec_NDCG@5', 0),
-                    'rec_NDCG@10': results[i].get('rec_NDCG@10', 0),
-                    'Resumo': "Ground Truth:" +results[i].get('ground_truth','') +"\n\n"+  results[i].get('input_3', '') + results[i].get('predictions_3', ''),
-                })
+            results[i]['Resumo'] = "Ground Truth:" +results[i].get('ground_truth','') +"\n\n"+  results[i].get('input_3', '') + results[i].get('predictions_3', '')
 
         results['end_time'] = time.time()
         results['runtime'] = results['end_time'] - results['start_time']
@@ -143,36 +122,10 @@ def recommendation_workflow(config, wandb_key, dataset, prompt_template, prompt_
         # calculate average metrics
         results['avg_metrics'] = metrics.calculate_average_metrics(results)
 
-        if run_wandb:
-            # Atualiza o wandb com os resultados
-            run.log({
-                'avg_HitRate@5': results['avg_metrics']['avg_HitRate@5'],
-                'avg_HitRate@10': results['avg_metrics']['avg_HitRate@10'],
-                'avg_Precision@5': results['avg_metrics']['avg_Precision@5'],
-                'avg_Precision@10': results['avg_metrics']['avg_Precision@10'],
-                'avg_Recall@5': results['avg_metrics']['avg_Recall@5'],
-                'avg_Recall@10': results['avg_metrics']['avg_Recall@10'],
-                'avg_NDCG@5': results['avg_metrics']['avg_NDCG@5'],
-                'avg_NDCG@10': results['avg_metrics']['avg_NDCG@10'],
-                
-                'avg_GT_HitRate@5': results['avg_metrics']['avg_GT_HitRate@5'],
-                'avg_GT_HitRate@10': results['avg_metrics']['avg_GT_HitRate@10'],
-                'avg_GT_Precision@5': results['avg_metrics']['avg_GT_Precision@5'],
-                'avg_GT_Precision@10': results['avg_metrics']['avg_GT_Precision@10'],
-                'avg_GT_Recall@5': results['avg_metrics']['avg_GT_Recall@5'],
-                'avg_GT_Recall@10': results['avg_metrics']['avg_GT_Recall@10'],
-                'avg_GT_NDCG@5': results['avg_metrics']['avg_GT_NDCG@5'],
-                'avg_GT_NDCG@10': results['avg_metrics']['avg_GT_NDCG@10']
-            })
-
         # save dictionary to pickle file
         arq_name = utils.save_result_to_pickle(results, config)
 
     except Exception as e:
         print(f"Ocorreu um erro: {e}")
-    finally:
-        if run_wandb:
-            run.finish()
-            wandb.finish()
 
     return arq_name
