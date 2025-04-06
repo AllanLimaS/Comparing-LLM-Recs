@@ -36,3 +36,6 @@ percebi que nao tenho mais acesso ao wandb
 retirando o uso do wandb 
 pesquisando alternativas para comparar as configurações e resultados
 criando um aplicativo StreamLib 
+
+
+

@@ -16,6 +16,11 @@ def highlight_max(s):
 def generate_color(name):
     return "#" + md5(name.encode()).hexdigest()[:6]
 
+@st.dialog(title="json do esperimento",width="large")
+def show_popup(exp):
+    st.write("Aqui você pode visualizar o JSON do experimento.")
+    st.json(all_experiments_jsons[exp], expanded=1)
+
 # Caminho da pasta com os .pkl
 PKL_DIR = "Results"
 
@@ -29,49 +34,66 @@ if not pkl_files:
     st.warning("Nenhum arquivo .pkl encontrado na pasta 'resultados_pkl'.")
     st.stop()
 
-#### SIDE BAR ####
-
-st.sidebar.header("Experimentos")
+# carregar experimentos 
 all_experiments = {}
-all_metrics_set = set()
-
+all_experiments_metrics = {}
+all_experiments_jsons = {}
 experiment_colors = {}
+all_metrics_set = set()
 
 for file in sorted(pkl_files):
     color = generate_color(file)
-    col1, col2 = st.sidebar.columns([0.05, 0.85])
 
+    with open(os.path.join(PKL_DIR, file), "rb") as f:
+        data = pickle.load(f)
+
+    all_experiments_jsons[file] = data
+
+    raw_metrics = data.get("avg_metrics", {})
+    metrics = {k.replace("avg_", ""): v for k, v in raw_metrics.items()}
+
+    if metrics:
+        all_experiments[file] = file
+        all_experiments_metrics[file] = metrics
+        all_metrics_set.update(metrics.keys())
+        experiment_colors[file] = color
+
+#### SIDE BAR ####
+
+st.sidebar.header("Experimentos")
+selected_experiments = {}
+
+for exp in sorted(all_experiments):
+    
+    col1, col2 = st.sidebar.columns([0.05, 0.85])
     # Coluna 1 com a cor do experimento
     with col1:
         st.markdown(
-            f"<div style='width: 14px; height: 14px; background-color:{color}; border-radius: 50%; margin-top: 8px;'></div>",
+            f"<div style='width: 14px; height: 14px; background-color:{experiment_colors[exp]}; border-radius: 50%; margin-top: 8px;'></div>",
             unsafe_allow_html=True
         )
     
     # Coluna 2 com o checkbox
     with col2:
-        show = st.checkbox(file, value=True, key=f"cb_{file}")
+        select_exp = st.checkbox(file, value=True, key=f"cb_{exp}")
+        if st.button("JSON", key=f"btn_{exp}"):
+            show_popup(exp)
     
-    if show:
-        with open(os.path.join(PKL_DIR, file), "rb") as f:
-            data = pickle.load(f)
-        raw_metrics = data.get("avg_metrics", {})
-        metrics = {k.replace("avg_", ""): v for k, v in raw_metrics.items()}
-        
-        if metrics:
-            all_experiments[file] = metrics
-            all_metrics_set.update(metrics.keys())
-            experiment_colors[file] = color
+    #popup_exp.json(all_experiments_jsons[exp], expanded=1)
 
+    if select_exp:
+        selected_experiments[exp] = exp
+        
 if not all_experiments:
     st.warning("Nenhum experimento foi selecionado.")
     st.stop()
 
+## Filtro de metricas
 
-# Sidebar: selecionar métricas
+expander = st.sidebar.expander("📐 Selecionar Métricas",False)
 all_metrics = sorted(list(all_metrics_set))
-st.sidebar.header("📐 Selecionar Métricas")
-selected_metrics = st.sidebar.multiselect("Escolha as métricas a visualizar:", all_metrics, default=all_metrics)
+dafault_metrics = ['GT_HitRate@10','HitRate@10', 'GT_NDCG@10','NDCG@10']
+selected_metrics = expander.multiselect("Escolha as métricas a visualizar:", all_metrics, default=dafault_metrics)
 
 if not selected_metrics:
     st.warning("Nenhuma métrica foi selecionada.")
@@ -93,7 +115,8 @@ df_configs = pd.DataFrame()
 
 col1, col2 = st.columns([0.05, 0.95])  
 
-for exp in all_experiments:
+for exp in selected_experiments:
+    print(exp)
     with open(os.path.join(PKL_DIR, exp), "rb") as f:
         data = pickle.load(f)
     config = data.get("config", {})
@@ -139,12 +162,12 @@ st.subheader("📋 Tabela Comparativa de Métricas")
 col1, col2 = st.columns([0.05, 0.95])  
 
 # Criar DataFrame geral com apenas métricas selecionadas
-filtered_data = {
-    exp: {metric: all_experiments[exp].get(metric, None) for metric in selected_metrics}
-    for exp in all_experiments
+exp_metrics_filtered = {
+    exp: {metric: all_experiments_metrics[exp].get(metric, None) for metric in selected_metrics}
+    for exp in selected_experiments
 }
-df_all = pd.DataFrame(filtered_data).T
-df_all = df_all.sort_index()
+df_exp_metrics = pd.DataFrame(exp_metrics_filtered).T
+df_exp_metrics = df_exp_metrics.sort_index()
 
 
 # Coluna 1: Cor do experimento
@@ -166,7 +189,7 @@ with col1:
 # Coluna 2: Tabela com métricas
 with col2:
     st.dataframe(
-        df_all.style.apply(highlight_max, axis=0),
+        df_exp_metrics.style.apply(highlight_max, axis=0),
         use_container_width=True
     )
 ### TABELA MÉTRICAS ####
@@ -207,18 +230,18 @@ col1, col2 = st.columns(2)
 with col1:
     if metrics_normal:
         st.subheader("Sem 'GT'")
-        df_normal = df_all[metrics_normal].T
+        df_normal = df_exp_metrics[metrics_normal].T
         plot_bar_chart(df_normal, "Métricas sem GT")
 
 with col2:
     if metrics_gt:
         st.subheader("Com 'GT'")
-        df_gt = df_all[metrics_gt].T
+        df_gt = df_exp_metrics[metrics_gt].T
         plot_bar_chart(df_gt, "Métricas com GT")
 
 
 ### GRÁFICOS PARA MÉTRICAS ###
 
 # Download CSV
-csv = df_all.to_csv().encode("utf-8")
+csv = df_exp_metrics.to_csv().encode("utf-8")
 st.download_button("Baixar comparação em CSV", csv, file_name="comparacao_experimentos.csv", mime="text/csv")
