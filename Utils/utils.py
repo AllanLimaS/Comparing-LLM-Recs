@@ -12,10 +12,12 @@ def query_lm_studio(model, temp, sytem_prompt, prompt, max_tokens):
 
     """Envia uma requisição para o LM Studio e retorna a resposta."""
     
+    system_role = "assistant" if "mistral" in model else "system"
+
     payload = {
         "model": model,  # Nome do modelo carregado no LM Studio
         "messages": [
-            {"role": "system", "content": sytem_prompt},
+            {"role": system_role, "content": sytem_prompt},
             {"role": "user", "content": prompt}
         ],
         "temperature": temp,

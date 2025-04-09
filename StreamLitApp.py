@@ -59,25 +59,29 @@ for file in sorted(pkl_files):
         experiment_colors[file] = color
 
 #### SIDE BAR ####
-
 st.sidebar.header("Experimentos")
 selected_experiments = {}
 
 for exp in sorted(all_experiments):
     
-    col1, col2 = st.sidebar.columns([0.05, 0.85])
+    #col1, col2 = st.sidebar.columns([0.05, 0.85])
+    col1, col2, col3 = st.sidebar.columns([0.05,0.2, 0.55])
+
     # Coluna 1 com a cor do experimento
     with col1:
         st.markdown(
             f"<div style='width: 14px; height: 14px; background-color:{experiment_colors[exp]}; border-radius: 50%; margin-top: 8px;'></div>",
             unsafe_allow_html=True
         )
-    
-    # Coluna 2 com o checkbox
+        
     with col2:
-        select_exp = st.checkbox(file, value=True, key=f"cb_{exp}")
         if st.button("JSON", key=f"btn_{exp}"):
             show_popup(exp)
+    # Coluna 2 com o checkbox
+    with col2:
+        
+        select_exp = st.checkbox(exp, value=True, key=f"cb_{exp}")
+        
     
     #popup_exp.json(all_experiments_jsons[exp], expanded=1)
 
@@ -116,7 +120,6 @@ df_configs = pd.DataFrame()
 col1, col2 = st.columns([0.05, 0.95])  
 
 for exp in selected_experiments:
-    print(exp)
     with open(os.path.join(PKL_DIR, exp), "rb") as f:
         data = pickle.load(f)
     config = data.get("config", {})
@@ -127,8 +130,10 @@ for exp in selected_experiments:
         formatted_runtime = str(timedelta(seconds=int(runtime)))
     else:
         formatted_runtime = "N/A"
-
-    config_clean["__runtime"] = formatted_runtime
+    config_clean["runtime_seconds"] = runtime
+    config_clean["runtime"] = formatted_runtime
+    config_clean["recomendations"] = data['config'].get("test_run") if data['config'].get("test_run",0) > 0 else 943
+    config_clean["color"] = experiment_colors.get(exp, "#000")
     df_configs = pd.concat([df_configs, pd.DataFrame(config_clean, index=[exp])])
 
 
@@ -151,9 +156,18 @@ with col1:
 
 # Coluna 2: Tabela com configurações
 with col2:
-    st.dataframe(df_configs, use_container_width=True)
+    st.dataframe(df_configs, use_container_width=True, )
 
 ### TABELA CONFIGURAÇÃO ####
+
+st.scatter_chart(
+    data=df_configs,
+    x="recomendations",
+    x_label="Quantidade de Recomendacoes",
+    y="runtime_seconds",
+    y_label="Tempo de Execução",
+    color="color")
+
 
 ### TABELA MÉTRICAS ####
 
