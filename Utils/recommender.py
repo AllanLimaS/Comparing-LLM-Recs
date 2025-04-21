@@ -32,6 +32,12 @@ def recommendation_workflow(config, dataset, prompt_template, prompt_format):
             results[i] = {}
 
             watched_mv = dataset[i][0].split(' | ')[::-1]
+
+            watched_mv = watched_mv[-lenlimit:]
+            # pega apenas os x ultimos filmes assistidos em ordem cronologica 
+            # exemplo : watched_mv = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j"]
+            # watched_mv[-8:] = ["c", "d", "e", "f", "g", "h", "i", "j"]
+
             results[i]['ground_truth'] = dataset[i][-1]
 
             # Generate candidate items based on user filtering.
@@ -54,21 +60,21 @@ def recommendation_workflow(config, dataset, prompt_template, prompt_format):
                 # pipeline 
 
                 # STEP 1
-                input_1 = prompt_template['Preference'].format(', '.join(watched_mv[-lenlimit:]))
+                input_1 = prompt_template['Preference'].format(', '.join(watched_mv))
                 results[i]['input_1'] = input_1
                 response = utils.query_lm_studio(config["model_name"],config["Temperature"],prompt_template['System_prompt'],input_1,config["max_tokens"])
                 predictions_1 = response
                 results[i]['predictions_1'] = predictions_1
 
                 # STEP 2
-                input_2 = prompt_template['Featured_movies'].format(', '.join(watched_mv[-lenlimit:]), predictions_1)
+                input_2 = prompt_template['Featured_movies'].format(', '.join(watched_mv), predictions_1)
                 results[i]['input_2'] = input_2
                 response = utils.query_lm_studio(config["model_name"],config["Temperature"],prompt_template['System_prompt'],input_2,config["max_tokens"])
                 predictions_2 = response
                 results[i]['predictions_2'] = predictions_2
 
                 # STEP 3
-                input_3 = prompt_template['Recommendation'].format(', '.join(candidate_items),', '.join(watched_mv[-lenlimit:]), predictions_1, predictions_2)
+                input_3 = prompt_template['Recommendation'].format(', '.join(candidate_items),', '.join(watched_mv), predictions_1, predictions_2)
                 results[i]['input_3'] = input_3
                 response = utils.query_lm_studio(config["model_name"],config["Temperature"],prompt_template['System_prompt'],input_3,config["max_tokens"])
                 predictions_3 = response
