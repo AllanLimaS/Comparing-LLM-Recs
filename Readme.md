@@ -137,13 +137,61 @@ verificar as possibilidades do finetuning
 
 fazer teste com um prompt de 1 etapa apenas com os 3 itens originais. 
 
-    fine tuning , com resultados para coletar 
-    
-    alterar a questão dos filmes assistidos que são passados por prompt 
-        pegar: 8 do inicio | 8 aleatorio | 8 do final 
-        sempre em ordem de mais antigo para mais novo 
+fine tuning , com resultados para coletar 
 
-    testar o ml1M 
-    testar modelos PHI e QWEN 
+alterar a questão dos filmes assistidos que são passados por prompt 
+    pegar: 8 do inicio | 8 aleatorio | 8 do final 
+    sempre em ordem de mais antigo para mais novo 
 
-    juntar as anotações importantes do notion aqui 
+testar o ml1M 
+testar modelos PHI e QWEN 
+
+juntar as anotações importantes do notion aqui 
+
+## oque foi feito 
+
+    Fine Tuning
+        Ajustado o dataset de treino, antes ele estava passando mais "filmes assistidos" que deveria, agora está passando apenas os 8 ultimos 
+        varias tentativas de finetunning, problemas com o uso de GPU do colab expirando 
+
+    teste de modelos 
+        [ok] qwen2.5-7b-instruct-1m
+        [ok] phi-4
+        [ok] ministral-8b-instruct-2410
+        [ok] Llama 3.2 1B F16
+        [ok] Llama 3.2 3B F16
+        [não] mistral-small-3.1-24b-instruct-2503 - no Q_4_K_M naõ rodou, mas em uma quantização mais forte roda
+
+
+## Duvidas 
+
+    o ministral teve metricas bem ruins, pois ele nao conseguia seguir o padrão do nome dos filmes passados 
+
+    por exemplo 
+
+    o gt é "Shawshank Redemption", e estava com essa exata nomenclatura na lista de candidatos 
+    porem essa foi a lista de recomendações dele, por causa do "the" não foi tido um Hit, sigo nessa linha? ou ajusto a função para considerar isso um Hit
+
+        "1. The Shawshank Redemption
+        2. Heathers
+        3. Manchurian Candidate
+        4. Big Sleep
+        5. Cape Fear
+        6. Stand by Me
+        7. Seven (Se7en)
+        8. Terminator 2: Judgment Day
+        9. True Lies
+        10. Searching for Bobby Fischer"
+
+    ou também ocorre assim
+
+        "1. **Shawshank Redemption** (1997)
+        2. **Full Monty** (2000)
+        3. **Liar Liar** (1997)
+        4. **Evita** (1996)
+        5. **In & Out** (1997)
+        6. **Dante's Peak** (1997)
+        7. **Cop Land** (1997)
+        8. **Scream** (1996)
+        9. **Jerry Maguire** (1996)
+        10. **Contact** (1997)"

@@ -19,6 +19,7 @@ def recommendation_workflow(config, dataset, prompt_template, prompt_format):
     nsu = config["nsu"]
     nci = config["nci"]
     lenlimit = config["lenlimit"]
+    lenlimit_option = config["lenlimit_option"]
 
     results['start_time'] = time.time()
 
@@ -30,13 +31,23 @@ def recommendation_workflow(config, dataset, prompt_template, prompt_format):
         for i in tqdm(id_list, desc="Processando", unit="it"): 
 
             results[i] = {}
-
             watched_mv = dataset[i][0].split(' | ')[::-1]
 
-            watched_mv = watched_mv[-lenlimit:]
-            # pega apenas os x ultimos filmes assistidos em ordem cronologica 
-            # exemplo : watched_mv = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j"]
-            # watched_mv[-8:] = ["c", "d", "e", "f", "g", "h", "i", "j"]
+            if lenlimit_option == 'ultimos':
+                watched_mv = watched_mv[-lenlimit:]
+                # pega apenas os x ultimos filmes assistidos em ordem cronologica 
+                # exemplo : watched_mv = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j"]
+                # watched_mv[-8:] = ["c", "d", "e", "f", "g", "h", "i", "j"]
+            elif lenlimit_option == 'primeiros':
+                watched_mv = watched_mv[:lenlimit]
+                # pega apenas os x primeiros filmes assistidos
+                # exemplo : watched_mv = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j"]
+                # watched_mv[:8] = ["a", "b", "c", "d", "e", "f", "g", "h"]
+            elif lenlimit_option == 'aleatorio':
+                # Pega 8 índices aleatórios e ordena esses índices
+                indices = sorted(random.sample(range(len(watched_mv)), k=min(lenlimit, len(watched_mv))))
+                # Usa os índices pra manter os filmes em ordem
+                watched_mv = [watched_mv[i] for i in indices]
 
             results[i]['ground_truth'] = dataset[i][-1]
 

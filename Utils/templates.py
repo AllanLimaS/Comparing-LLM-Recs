@@ -191,3 +191,32 @@ TRAIN_TEMPLATE = {
     "OUTPUT": 
     """ 1.{} """
 }
+
+TRAIN_TEMPLATE_2 = {
+    "INPUT": """
+
+    ### CANDIDATE MOVIE SET: {}.
+
+    ### MY RECENTLY WATCHED MOVIES (FROM OLDEST TO NEWEST): {}.
+
+    ### MY MOVIE PREFERENCES: {}.
+
+    ### MY FIVE MOST FEATURED MOVIES: {}.
+
+    ### INSTRUCTIONS:
+    Recommend exactly **1 movie** from the "Candidate Movie Set" that are most similar to my "Five Most Featured Movies".
+    The output must be **STRICTLY formatted** as follows:
+
+    1. Movie Title
+
+    Do not include any extra text before or after the list
+
+    ### QUESTION:
+    What are your top 1 movie recommendations?
+
+    ### ANSWER:
+""",
+
+    "OUTPUT": 
+    """ 1.{} """
+}
