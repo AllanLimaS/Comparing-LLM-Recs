@@ -102,7 +102,7 @@ verificar as possibilidades do finetuning
             Llama 2 7B      - TheBloke/Llama-2-7B-GGUF
 
         mistral 
-            Mistral small   - unsloth/Mistral-Small-3.1-24B-Instruct-2503-GGUF (talvez)
+            [X]Mistral small   - unsloth/Mistral-Small-3.1-24B-Instruct-2503-GGUF (talvez)
             Ministral       - bartowski/Ministral-8B-Instruct-2410-GGUF
 
         google 
@@ -151,8 +151,14 @@ juntar as anotações importantes do notion aqui
 ## oque foi feito 
 
     Fine Tuning
-        Ajustado o dataset de treino, antes ele estava passando mais "filmes assistidos" que deveria, agora está passando apenas os 8 ultimos 
-        varias tentativas de finetunning, problemas com o uso de GPU do colab expirando 
+        Ajustado o dataset de treino, antes ele estava passando mais "filmes assistidos" que deveria, agora está passando apenas os 8 ultimos.
+        varias tentativas de finetunning, problemas com o uso de GPU do colab expirando e outros problemas.
+
+        consegui treinar um modelo, teve resultados consideraveis, porem precisa verificar oque está especificado ali em "duvidas"
+
+    testes com alteração de onde pegar os 8 filmes assistidos ( inicio, fim e aleatorio )
+
+    teste com ML1M 
 
     teste de modelos 
         [ok] qwen2.5-7b-instruct-1m
@@ -195,3 +201,26 @@ juntar as anotações importantes do notion aqui
         8. **Scream** (1996)
         9. **Jerry Maguire** (1996)
         10. **Contact** (1997)"
+
+
+
+# orientação 24/04/2025 
+
+## anotações 
+
+esparcidade do dataset movielens
+https://www.d2l.ai/chapter_recommender-systems/movielens.html
+
+## oque fazer 
+
+    fazer o calculo das métricas hitrate utilizando um contains simples. 
+    caso de muita difereça, tentar limpar as respostas com regex para trabalhar com ndcg. 
+
+    fazer mais testes com ordem de filmes assistidos 
+        utilizando dataset inteiro / com mais modelos
+
+    começar os experimentos para valer, depois desses dois detalhes. 
+    iniciar anotações: 
+        justificativa de escolhas do experimento
+        objetivo do experimento ( oque é esperado descobrir)
+        resultado

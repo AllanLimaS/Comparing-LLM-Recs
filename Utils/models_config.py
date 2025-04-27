@@ -103,3 +103,16 @@ def meta_llama_3_1_8b_instruct():
     "Evaluation Batch Size": 512,
     "Flash Attention": False,
     }
+
+def gemma_3_4b_ft_allan():
+    return{
+    "model_name" :"gemma_3_4b_ft_allan",
+    "Arch" : "llama",
+    "Quantization" : "Q4_K_M",
+    "Temperature": 0.1,
+    "max_tokens" : 4096,
+    "GPU Offload": 28,
+    "CPU Thread Pool Size": 6,
+    "Evaluation Batch Size": 512,
+    "Flash Attention": False,
+    }

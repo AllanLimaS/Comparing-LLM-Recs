@@ -213,7 +213,6 @@ with col1:
 # Coluna 2: Tabela com configurações
 with col2:
     st.dataframe(df_configs, use_container_width=True, )
-
 ### TABELA CONFIGURAÇÃO ####
 
 

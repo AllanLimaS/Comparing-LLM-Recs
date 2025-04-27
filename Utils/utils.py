@@ -5,6 +5,7 @@ import json
 from datetime import datetime
 import pickle
 import re
+import time
 
 def query_lm_studio(model, temp, sytem_prompt, prompt, max_tokens):
 
@@ -29,13 +30,35 @@ def query_lm_studio(model, temp, sytem_prompt, prompt, max_tokens):
         "Content-Type": "application/json"
     }
     
-    response = requests.post(API_URL, headers=headers, json=payload)
-    
-    if response.status_code == 200:
-        return response.json()["choices"][0]["message"]["content"].strip()
-    else:
-        print("Erro:", response.status_code, response.text)
-        return None
+    timeout = 120  # Tempo limite para a requisição (em segundos)
+    retries = 2
+    delay = 60
+
+    for attempt in range(retries):
+        try:
+            response = requests.post(API_URL, headers=headers, json=payload, timeout=timeout)
+
+            if response.status_code == 200:
+                return response.json()["choices"][0]["message"]["content"].strip()
+
+            elif response.status_code == 404:
+                print(f"[Tentativa {attempt+1}/{retries}] Modelo ainda não carregado? Erro 400. Aguardando {delay}s...")
+                time.sleep(delay)
+
+            else:
+                print(f"Erro inesperado ({response.status_code}):", response.text)
+                return None
+
+        except requests.exceptions.Timeout:
+            print(f"Timeout após {timeout}s. Tentando novamente ({attempt+1}/{retries})...")
+            time.sleep(delay)
+
+        except requests.exceptions.RequestException as e:
+            print("Erro na requisição:", e)
+            return None
+
+    print("Número máximo de tentativas excedido.")
+    return None
 
 def save_result_to_pickle(results,config):
     # Gera um timestamp para garantir nomes únicos
