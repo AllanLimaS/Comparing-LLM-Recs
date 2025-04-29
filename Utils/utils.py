@@ -82,6 +82,43 @@ def extract_movie_titles(text):
     """Extrai os títulos dos filmes removendo a numeração"""
     return [re.sub(r"^\d+\.\s*", "", line).strip() for line in text.split("\n") if line.strip()]
 
+def clean_movie_name_new(movie):
+    """Remove o ano entre parênteses e converte para uppercase."""
+
+    movie = movie.upper()
+
+    movie = re.sub(r"\s*\(\d{4}\)", "", movie)  # Remove '(YYYY)'
+
+    # Corrige títulos que começam com ", The" ou ", A" etc.
+    movie = re.sub(r', (THE|A|AN)$', r'', movie)
+ 
+    # Remove os asteriscos "**"
+    movie = movie.replace("**", "")
+
+    # remove toda ocorrencia de THE
+    movie = movie.replace("THE","")
+
+    # remove toda quebra de linha
+    movie = movie.replace("\n"," ")
+
+    # remove toda ocorrencia de 1. 2. 3. 4. 5. 6. 7. 8. 9. 10. e troca por \n
+    movie = re.sub(r"(?<!\n)(\b[1-9]|10)\.", r"\n", movie)
+
+    return movie.upper()  # Converte para uppercase
+
+def extract_movie_list(text):
+    """Extrai os nomes dos filmes de uma lista, separados por \n."""
+
+    # Divide a string 'text' em uma lista de filmes usando '\n' como separador
+    movies = text.strip().split('\n')
+
+    # Remove itens vazios da lista, caso existam
+    movies = [movie.strip() for movie in movies if movie.strip()]
+
+    return movies
+
+
+
 def read_json(path: str):
     with open(path) as f:
         return json.load(f)

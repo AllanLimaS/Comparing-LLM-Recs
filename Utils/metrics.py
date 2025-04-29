@@ -1,5 +1,5 @@
 import math
-from Utils.utils import clean_movie_name, extract_movie_titles
+from Utils.utils import clean_movie_name, extract_movie_titles, clean_movie_name_new, extract_movie_list
 
 def calculate_average_metrics(results):
     """
@@ -103,6 +103,42 @@ def calculate_metrics(query, relevants):
 
     return metrics
 
+def calculate_metrics_new(query, relevants):
+    """
+    Calcula as métricas de precisão, recall, hit e ndcg para @5 e @10.
+    
+    Args:
+    - query (list): Lista de itens recomendados (ordenados por relevância).
+    - relevants (str): String de item relevante.
+    
+    Returns:
+    - dict: Dicionário com as métricas calculadas para @5 e @10.
+    """
+
+    metrics = {}
+
+    query = clean_movie_name_new(query)
+    lista = extract_movie_list(query)
+
+    ground_truth_set = [clean_movie_name_new(relevants)]
+
+
+    for k in [5, 10]:
+
+        recommendations_set = list(lista)[:k]
+
+        hit = calculate_hit_new(recommendations_set, ground_truth_set)
+        #precision = calculate_precision(recommendations_set, ground_truth_set)
+        #recall = calculate_recall(recommendations_set, ground_truth_set)
+        ndcg = calculate_ndcg_new(recommendations_set, ground_truth_set)
+
+        metrics[f"hit@{k}"] = hit
+        #metrics[f"precision@{k}"] = precision
+        #metrics[f"recall@{k}"] = recall
+        metrics[f"ndcg@{k}"] = ndcg
+
+    return metrics
+
 
 def calculate_hit(query, relevants):
     """
@@ -115,29 +151,20 @@ def calculate_hit(query, relevants):
     """
     return int(bool(set(query) & set(relevants)))  # Retorna 1 se houver interseção, senão 0
 
-
-def calculate_hitrate_old(data):
+def calculate_hit_new(query, relevants):
     """
-    Calcula a eficácia do modelo com base na métrica 'hit'.
+    Calcula o Hit Rate (HR@K).
+    
+    query: Lista de itens recomendados para o usuário.
+    relevants: Lista de itens relevantes para o usuário.
+    
+    Retorna 1 se pelo menos um item relevante estiver na lista de recomendações, senão retorna 0.
     """
-
-    # Filtra apenas as entradas numéricas (os testes)
-    recomendacoes = [v for k, v in data.items() if isinstance(k, int)]
-    
-    # Conta os hits
-    hits = sum(1 for recomendacao in recomendacoes if recomendacao.get("hit", False))
-    
-    # Número total de testes
-    total_recomendacoes = len(recomendacoes)
-    
-    # Evita divisão por zero
-    if total_recomendacoes == 0:
-        return 0.0
-    
-    # Calcula a eficácia (acurácia)
-    eficacia = hits / total_recomendacoes
-    
-    return eficacia
+    for relevant in relevants:
+        for item in query:
+            if relevant in item:
+                return 1
+    return 0
 
 
 def calculate_precision(query, relevants):
@@ -211,4 +238,25 @@ def calculate_ndcg(query, relevants):
         idcg += calculate_dcg(1,i+1) if i < len(relevants) else 0 # Calcula o IDCG se houver relevantes, senão, apenas não muda o IDCG já calculado -- a relevância dos itens corretos (ground-truths) é 1 quando existir. 
         dcg += calculate_dcg(1,i+1) if item in relevants else 0 # Calcula o DCG se o item recomendado está na lista de relevantes (ground-truths), senão, não muda o DCG -- a relevância dos itens corretos (GT) é 1
     #print(f'[{i}] - IDCG: {idcg} | DCG: {dcg}')
+    return dcg / idcg
+
+def calculate_ndcg_new(query, relevants):
+    """
+    Essa função calcula o Normalized Discounted Cumulative Gain (nDCG), que é a versão normalizada do DCG para comparar listas de recomendações de diferentes tamanhos.
+    
+    Como funciona:
+
+    1 - Calcula o DCG, que mede a qualidade da ordenação das recomendações.
+
+    2 - Calcula o IDCG (Ideal DCG), que é o DCG da melhor ordenação possível (todos os itens relevantes no topo).
+
+    3 - Retorna a normalização nDCG = DCG / IDCG.
+    """
+    dcg = 0
+    idcg = 0
+
+    relevant = relevants[0]
+    for i,item in enumerate(query):
+        idcg += calculate_dcg(1,i+1) if i < len(relevant) else 0 # Calcula o IDCG se houver relevantes, senão, apenas não muda o IDCG já calculado -- a relevância dos itens corretos (ground-truths) é 1 quando existir.
+        dcg += calculate_dcg(1,i+1) if relevant in item else 0 # Calcula o DCG se o item recomendado está na lista de relevantes (ground-truths), senão, não muda o DCG -- a relevância dos itens corretos (GT) é 1
     return dcg / idcg

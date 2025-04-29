@@ -125,13 +125,19 @@ verificar as possibilidades do finetuning
     comentar sobre como alguns modelos são mais sensiveis a troca de prompts 
 
     experimentos para comparativo
-        1 - diferença de versões de modelos
-        2 - diferença de modelos
-        3 - diferença de quantiazação 
-        4 - ml100k e ml1M
-        5 - finetuning
-        6 - diferença entre prompts
-        7 - quantidades de itens do histórico do usuário para o prompt
+
+        com realação a configuração: 
+            1 - diferença entre prompts (entre os usados anteriormente)
+            2 - quantidades de itens do histórico do usuário para o prompt
+
+        com relação aos modelos: (evidenciar uma taxa de alucinação)
+            3 - diferença de versões de modelos (entre familias)
+            4 - diferença de quantiazação (llama 3.2)
+            5 - diferença de modelos (entre vencedores das familias acima)
+
+        com relação ao dataset e finetunning: 
+            6 - finetuning (definir modelo melhor com base nos exp de cima  "com" e "sem")
+            7 - ml100k e ml1M (entre os usados anteriormente)
 
 ## oque fazer 
 
@@ -224,3 +230,75 @@ https://www.d2l.ai/chapter_recommender-systems/movielens.html
         justificativa de escolhas do experimento
         objetivo do experimento ( oque é esperado descobrir)
         resultado
+
+## oque foi feito
+
+    ajustada as funções de calculo de métricas
+    primeiro testado o hit utilizando o contains diretamente, diferença foi consideravel (~20% de ganho).
+    ajustado regex para que seja possível fazer o calculo com contains com NDCG também.
+    resultado bom, porem DUVIDA abaixo
+
+    mais testes com diferentes metodos de mostrar os filmes assistidos. 
+    testes com fine tunning 
+
+## 
+    analisando as diferenças entre os diferentes calculos 
+    situações como essa são resolvidas 
+
+        Candidate_set ['.....  'Shawshank Redemption',.....']
+
+        GT: Shawshank Redemption
+
+        Predição: 1. Lawrence of Arabia (War/Drama)
+        2. Glory (War/Drama)
+        3. Shawshank Redemption (Drama)  <<----------------------
+        4. Patton (Biography/War)
+        5. Unforgiven (Western/Drama)
+        6. High Noon (Western/Drama)
+        7. The Manchurian Candidate (Political Thriller)
+        8. Seven (Crime/Mystery)
+        9. Alien (Sci-Fi/Horror)
+        10. Terminator 2: Judgment Day (Action/Sci-Fi).
+
+        método 1: 0
+        método 2:1
+        método 3:1
+
+    porem situações como essa começam a ocorrer
+
+        Candidate_set ['.... 'Back to the Future',....]
+
+        GT: Back to the Future
+
+        Predição: 1. Die Hard: With a Vengeance
+        2. Independence Day (ID4): Resurgence
+        3. Star Wars: The Empire Strikes Back
+        4. Speed
+        5. Raiders of the Lost Ark
+        6. Aliens
+        7. Jurassic Park
+        8. Terminator 2: Judgment Day
+        9. Back to the Future Part II  <<----------------------
+        10. Apollo 13
+
+        método 1: 0
+        método 2:1
+        método 3:1
+
+
+# orientação 28/04/2025 
+
+## anotações importantes 
+    
+    considerar os primeiros itens do histórico, e justificar a escolha por causa dos resultados obtidos experimentando diferentes configurações. 
+
+
+## oque fazer 
+
+    verificar todos os itens da recomendação, se caso algum item recomendado 
+    tentar mapear todos os casos de sufixos e prefixos que o llm gera a mais fora do nome dos filmes. 
+    e fazer um contains da resposta dentro da lista de candidatos, caso tiver um filme que não esteja na lista de candidatos, desconsiderar a recomendação inteira (alucinação)
+    manter a resposta atual, para comparar resultados e então calcular uma taxa de alucinação. 
+
+    fazer um experimento com o modelo finetunado utilizando apenas o dataset de teste. guardar resultado para documentar. 
+
