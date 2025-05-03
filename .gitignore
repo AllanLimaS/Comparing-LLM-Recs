@@ -3,7 +3,11 @@ __pycache__/
 *.py[cod]
 *.pyo
 
+# excel
+*.xlsx
+.~lock*
+
 # files in result folder
-Results/*.pkl
+Results/*
 ```
 wandb

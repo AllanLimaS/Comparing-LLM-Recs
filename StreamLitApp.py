@@ -3,6 +3,7 @@ import os
 import pickle
 import pandas as pd
 import matplotlib.pyplot as plt
+import altair as alt
 from datetime import timedelta
 
 from hashlib import md5
@@ -152,7 +153,7 @@ if not all_experiments:
 
 expander_metrics = st.sidebar.expander("📐 Selecionar Métricas",False)
 all_metrics = sorted(list(all_metrics_set))
-dafault_metrics = ['GT_HitRate@10','HitRate@10', 'GT_NDCG@10','NDCG@10']
+dafault_metrics = ['GT_HitRate@10','HitRate@10', 'GT_NDCG@10','NDCG@10','GT_Hallucination','GT_NDCG@10_safe','GT_HitRate@10_safe']
 selected_metrics = expander_metrics.multiselect("Escolha as métricas a visualizar:", all_metrics, default=dafault_metrics)
 
 if not selected_metrics:
@@ -160,8 +161,10 @@ if not selected_metrics:
     st.stop()
 
 # Filtrar métricas GT e não-GT
-metrics_gt = [m for m in selected_metrics if "GT" in m]
-metrics_normal = [m for m in selected_metrics if "GT" not in m]
+metrics_gt = [m for m in selected_metrics if "GT" in m and "Hallucination" not in m and "safe" not in m]
+metrics_normal = [m for m in selected_metrics if "GT" not in m and "safe" not in m]
+metrics_hallucination = [m for m in selected_metrics if "Hallucination" in m]
+metrics_safe = [m for m in selected_metrics if "safe" in m]
 
 #### SIDE BAR ####
 
@@ -217,17 +220,80 @@ with col2:
 
 
 ### GRAFICO DE TEMPO DE EXECUÇÂO #### 
+df_configs_sorted = df_configs.sort_values("runtime_seconds", ascending=False).reset_index()
+df_configs_sorted = df_configs_sorted.rename(columns={"index": "experimento"})
+# Converte para minutos
+df_configs_sorted["runtime_minutes"] = df_configs_sorted["runtime_seconds"] / 60
+# Adiciona coluna formatada com ' mins'
+df_configs_sorted["runtime_text"] = df_configs_sorted["runtime_minutes"].map(lambda x: f"{x:.2f} mins")
 
-st.scatter_chart(
-    data=df_configs,
-    x="recomendations",
-    x_label="Quantidade de Recomendacoes",
-    y="runtime_seconds",
-    y_label="Tempo de Execução",
-    color="color")
+# Usa o nome do experimento como categoria no eixo Y
+#df_configs_sorted["experimento"] = df_configs_sorted.index.astype(str)
+
+
+
+# Altura proporcional
+chart_height = 100 * len(df_configs_sorted)
+
+bars = alt.Chart(df_configs_sorted).mark_bar(
+    yOffset=5,
+    cornerRadiusEnd=5,
+    height=20  # espessura da barra
+).encode(
+    y=alt.Y(
+        "experimento:N",
+        scale=alt.Scale(padding=0),
+        axis=alt.Axis(
+            bandPosition=0,
+            grid=True,
+            domain=False,
+            ticks=False,
+            labelAlign="left",
+            labelBaseline="middle",
+            labelPadding=-5,
+            labelOffset=-15,
+            labelFontSize=18,
+            title=None,
+            labelLimit=0
+        )
+    ),
+    x=alt.X(
+        "runtime_minutes:Q",
+        axis=alt.Axis(grid=False),
+        title="Tempo de Execução (min)"
+    ),
+    color=alt.Color(
+        "experimento:N",
+        scale=alt.Scale(range=df_configs_sorted["color"].tolist()),
+        legend=None
+    ),
+    tooltip=[
+        alt.Tooltip("experimento:N", title="Experimento"),
+        alt.Tooltip("runtime_minutes:Q", title="Tempo (min)", format=".2f")
+    ],
+).properties(height=chart_height)
+
+# Texto com valores
+text = alt.Chart(df_configs_sorted).mark_text(
+    align="left",
+    baseline="middle",
+    dx=3,   # deslocamento à direita da barra
+    dy=5,   # deslocamento para baixo
+    fontSize=16,
+    color="white",
+).encode(
+    y=alt.Y("experimento:N"),
+    x=alt.X("runtime_minutes:Q"),
+    text=alt.Text("runtime_text:N")
+)
+
+# Combina os dois
+chart = (bars + text).properties(height=chart_height)
+
+st.altair_chart(chart, use_container_width=True)
+
 
 ### GRAFICO DE TEMPO DE EXECUÇÂO ####
-
 
 ### TABELA MÉTRICAS ####
 
@@ -271,55 +337,134 @@ with col2:
 
 ### GRÁFICOS PARA MÉTRICAS ###
 
-# Função utilitária para plotar gráfico de barras
-def plot_bar_chart(df_plot, title):
-    fig, ax = plt.subplots(figsize=(10, len(df_plot) * 0.5))
-
-    # Ordena as cores de acordo com as colunas (nomes dos experimentos)
-    colors = [experiment_colors.get(col, "#333333") for col in df_plot.columns]
-
-    df_plot.plot(kind="bar", ax=ax, color=colors)
-
-    ax.set_ylabel("Valor")
-    ax.set_xlabel("Métrica")
-    ax.set_title(title)
-    plt.xticks(rotation=45, ha="right")
-
-    # Legenda personalizada
-    ax.legend(
-        title="Experimentos",
-        title_fontsize="12",
-        fontsize="10",
-        loc="upper center",
-        bbox_to_anchor=(0.5,-0.5),  
-        frameon=True,            
-        framealpha=0.9,
-        edgecolor="gray"
+def plot_bar_chart_vega(df_plot, title):
+    st.markdown(f"### {title}")
+    
+    # Derrete o DataFrame: transforma colunas de métricas em linhas
+    df_long = df_plot.drop(columns=["cor"]).reset_index().melt(
+        id_vars=["index"], var_name="Métrica", value_name="Valor"
     )
 
-    st.pyplot(fig)
+    # Renomeia a coluna 'index' para 'experimento'
+    df_long = df_long.rename(columns={"index": "experimento"})
 
-def plot_bar_chart_st(df_plot, title):
+    # Limpa os nomes das métricas para exibição
+    df_long["Métrica_Limpa"] = (
+        df_long["Métrica"]
+        .str.replace(r"^GT_", "", regex=True)
+        .str.replace(r"_safe$", "", regex=True)
+    )
+
+    # Lista com os nomes e cores dos experimentos
+    experimentos = df_long["experimento"].unique().tolist()
+    cores = df_plot["cor"].values.tolist()
+
+    chart = alt.Chart(df_long).mark_bar(cornerRadiusEnd=5).encode(
+        #x=alt.X("Métrica:N", title="Métricas"),
+        x=alt.X("Métrica_Limpa:N", title=None, axis=alt.Axis(
+                                                    labelFontSize=16,
+                                                    labelAngle=0,
+                                                    )),
+        y=alt.Y("Valor:Q", title=None, scale=alt.Scale(domain=[0, 1])),
+        xOffset=alt.XOffset("experimento:N", title="Experimentos"),
+        color=alt.Color(
+            "experimento:N",
+            scale=alt.Scale(domain=experimentos, range=cores),
+            legend=None
+        ),
+        tooltip=[
+            alt.Tooltip("experimento:N", title="Experimento"),
+            alt.Tooltip("Métrica:N", title="Métrica"),
+            alt.Tooltip("Valor:Q", title="Valor", format=".3f"),
+        ],
+    )
+
+    st.altair_chart(chart, use_container_width=True)
+
+def plot_bar_chart_vega_halluci(df_plot, title):
     st.markdown(f"### {title}")
-    st.bar_chart(df_plot,stack=False,horizontal= False)
+    
+    # Derrete o DataFrame: transforma colunas de métricas em linhas
+    df_long = df_plot.drop(columns=["cor"]).reset_index().melt(
+        id_vars=["index"], var_name="Métrica", value_name="Valor"
+    )
+
+    # Renomeia a coluna 'index' para 'experimento'
+    df_long = df_long.rename(columns={"index": "experimento"})
+
+    # Lista com os nomes e cores dos experimentos
+    experimentos = df_long["experimento"].unique().tolist()
+    cores = df_plot["cor"].values.tolist()
+
+    # Altura proporcional ao número de experimentos
+    chart_height = 100 * len(experimentos)
+
+    chart = alt.Chart(df_long).mark_bar(
+        yOffset=5,
+        cornerRadiusEnd=5,
+        height=20  # controla a espessura da barra
+    ).encode(
+        y=alt.Y(
+            "experimento:N",
+            scale=alt.Scale(padding=0),
+            axis=alt.Axis(
+                bandPosition=0,
+                grid=True,
+                domain=False,
+                ticks=False,
+                labelAlign="left",
+                labelBaseline="middle",
+                labelPadding=-5,
+                labelOffset=-15,
+                labelFontSize=18,
+                title=None,
+                labelLimit=0
+            )
+        ),
+        x=alt.X(
+            "Valor:Q",
+            scale=alt.Scale(domain=[0, 1]),
+            axis=alt.Axis(grid=False),
+            title=None
+        ),
+        color=alt.Color(
+            "experimento:N",
+            scale=alt.Scale(domain=experimentos, range=cores),
+            legend=None
+        ),
+        tooltip=[
+            alt.Tooltip("experimento:N", title="Experimento"),
+            alt.Tooltip("Valor:Q", title="Valor"),
+        ],
+    ).properties(height=chart_height)
+
+    st.altair_chart(chart, use_container_width=True)
 
 col1, col2 = st.columns(2)
-st.write("asdasdasd")
-st.write(df_exp_metrics[metrics_normal])
-
 with col1:
-    if metrics_normal:
-        st.subheader("Sem 'GT'")
-        df_normal = df_exp_metrics[metrics_normal].T
-        #plot_bar_chart(df_normal, "Métricas sem GT")
-        plot_bar_chart_st(df_normal, "Métricas sem GT")
+    if metrics_gt:
+        df_gt = df_exp_metrics[metrics_gt]
+        df_gt["cor"] = df_gt.index.map(lambda exp: experiment_colors.get(exp, "#000"))
+        plot_bar_chart_vega(df_gt, "Métricas com GT")
+
+
+
+    if metrics_hallucination:
+        df_hallucination = df_exp_metrics[metrics_hallucination]
+        df_hallucination["cor"] = df_hallucination.index.map(lambda exp: experiment_colors.get(exp, "#000"))
+        plot_bar_chart_vega_halluci(df_hallucination, "Alucinação")
 
 with col2:
-    if metrics_gt:
-        st.subheader("Com 'GT'")
-        df_gt = df_exp_metrics[metrics_gt].T
-        plot_bar_chart(df_gt, "Métricas com GT")
 
+    if metrics_safe:
+        df_safe = df_exp_metrics[metrics_safe]
+        df_safe["cor"] = df_safe.index.map(lambda exp: experiment_colors.get(exp, "#000"))
+        plot_bar_chart_vega(df_safe, "Métricas sem alucinação")
+
+    if metrics_normal:
+        df_normal = df_exp_metrics[metrics_normal]
+        df_normal["cor"] = df_normal.index.map(lambda exp: experiment_colors.get(exp, "#000"))
+        plot_bar_chart_vega(df_normal, "Métricas sem GT")
 
 ### GRÁFICOS PARA MÉTRICAS ###
 

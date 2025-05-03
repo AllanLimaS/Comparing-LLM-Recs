@@ -1,5 +1,5 @@
 import math
-from Utils.utils import clean_movie_name, extract_movie_titles, clean_movie_name_new, extract_movie_list
+from Utils.utils import clean_movie_name, extract_movie_titles, clean_movie_name_new, extract_movie_list, clean_movie_name_extra_infos
 
 def calculate_average_metrics(results):
     """
@@ -70,6 +70,78 @@ def calculate_average_metrics(results):
         final_result[key] = value
     return final_result
 
+def calculate_average_metrics_new(results):
+    """
+    Calcula a média geral das métricas e a média das métricas apenas quando gt_in_candidate_set == True.
+
+    Parâmetros:
+        results (dict): Dicionário contendo os resultados das recomendações.
+
+    Retorna:
+        dict: Dicionário com a média de cada métrica, geral e filtrada.
+    """
+
+    # Inicializa as somas das métricas
+    total_metrics = {
+    'avg_HitRate@5': 0, 'avg_NDCG@5': 0, 'avg_HitRate@5_safe': 0, 'avg_NDCG@5_safe': 0,
+    'avg_HitRate@10': 0, 'avg_NDCG@10': 0., 'avg_HitRate@10_safe': 0, 'avg_NDCG@10_safe': 0.
+    }
+
+    filtered_metrics = {
+        'avg_GT_HitRate@5': 0, 'avg_GT_NDCG@5': 0, 'avg_GT_HitRate@5_safe': 0, 'avg_GT_NDCG@5_safe': 0,
+        'avg_GT_HitRate@10': 0, 'avg_GT_NDCG@10': 0, 'avg_GT_HitRate@10_safe': 0, 'avg_GT_NDCG@10_safe': 0,
+        'avg_GT_Hallucination': 0
+    }
+
+    count_total = 0
+    count_filtered = 0
+
+    for key, value in results.items():
+        if isinstance(key, int) and isinstance(value, dict):
+            # Soma para total (@5 e @10)
+            total_metrics['avg_HitRate@5'] += value.get('rec_HitRate@5', 0)
+            total_metrics['avg_NDCG@5'] += value.get('rec_NDCG@5', 0)
+            total_metrics['avg_HitRate@5_safe'] += value.get('rec_HitRate@5_safe', 0)
+            total_metrics['avg_NDCG@5_safe'] += value.get('rec_NDCG@5_safe', 0)
+
+            total_metrics['avg_HitRate@10'] += value.get('rec_HitRate@10', 0)
+            total_metrics['avg_NDCG@10'] += value.get('rec_NDCG@10', 0)
+            total_metrics['avg_HitRate@10_safe'] += value.get('rec_HitRate@10_safe', 0)
+            total_metrics['avg_NDCG@10_safe'] += value.get('rec_NDCG@10_safe', 0)
+
+            count_total += 1
+
+            # Soma apenas para os casos filtrados
+            if value.get('gt_in_candidate_set') == True:
+                filtered_metrics['avg_GT_HitRate@5'] += value.get('rec_HitRate@5', 0)
+                filtered_metrics['avg_GT_NDCG@5'] += value.get('rec_NDCG@5', 0)
+                filtered_metrics['avg_GT_HitRate@5_safe'] += value.get('rec_HitRate@5_safe', 0)
+                filtered_metrics['avg_GT_NDCG@5_safe'] += value.get('rec_NDCG@5_safe', 0)
+
+                filtered_metrics['avg_GT_HitRate@10'] += value.get('rec_HitRate@10', 0)
+                filtered_metrics['avg_GT_NDCG@10'] += value.get('rec_NDCG@10', 0)
+                filtered_metrics['avg_GT_HitRate@10_safe'] += value.get('rec_HitRate@10_safe', 0)
+                filtered_metrics['avg_GT_NDCG@10_safe'] += value.get('rec_NDCG@10_safe', 0)
+
+                filtered_metrics['avg_GT_Hallucination'] += value.get('rec_Hallucination', 0)
+
+                count_filtered += 1
+
+    # Cálculo das médias
+    average_total = {
+        metric: total / count_total if count_total else 0 for metric, total in total_metrics.items()
+    }
+
+    average_filtered = {
+        metric: total / count_filtered if count_filtered else 0 for metric, total in filtered_metrics.items()
+    }
+
+    # Junta tudo em um único dicionário
+    final_result = average_total.copy()
+    for key, value in average_filtered.items():
+        final_result[key] = value
+    return final_result
+
 def calculate_metrics(query, relevants):
     """
     Calcula as métricas de precisão, recall, hit e ndcg para @5 e @10.
@@ -103,7 +175,7 @@ def calculate_metrics(query, relevants):
 
     return metrics
 
-def calculate_metrics_new(query, relevants):
+def calculate_metrics_new(query, relevants, candidate_set):
     """
     Calcula as métricas de precisão, recall, hit e ndcg para @5 e @10.
     
@@ -117,25 +189,54 @@ def calculate_metrics_new(query, relevants):
 
     metrics = {}
 
+    for k in [5, 10]:
+        metrics[f"hit@{k}"] = 0
+        metrics[f"ndcg@{k}"] = 0
+        metrics[f"hit@{k}_safe"] = 0
+        metrics[f"ndcg@{k}_safe"] = 0
+
     query = clean_movie_name_new(query)
-    lista = extract_movie_list(query)
+    lista_rec = extract_movie_list(query)
 
     ground_truth_set = [clean_movie_name_new(relevants)]
 
-
+ 
     for k in [5, 10]:
 
-        recommendations_set = list(lista)[:k]
+        recommendations_set = list(lista_rec)[:k]
 
         hit = calculate_hit_new(recommendations_set, ground_truth_set)
-        #precision = calculate_precision(recommendations_set, ground_truth_set)
-        #recall = calculate_recall(recommendations_set, ground_truth_set)
         ndcg = calculate_ndcg_new(recommendations_set, ground_truth_set)
 
         metrics[f"hit@{k}"] = hit
-        #metrics[f"precision@{k}"] = precision
-        #metrics[f"recall@{k}"] = recall
         metrics[f"ndcg@{k}"] = ndcg
+        metrics[f"hit@{k}_safe"] = hit
+        metrics[f"ndcg@{k}_safe"] = ndcg
+
+    # Verifica se os itens recomendados estão no conjunto de candidatos
+
+    candidate_set_clean = [clean_movie_name_extra_infos(movie) for movie in candidate_set]
+    lista_rec_clean = [clean_movie_name_extra_infos(movie) for movie in lista_rec]
+   
+    #print(f"Lista de recomendações: {lista_rec_clean}")
+    #print(f"Lista de relevantes: {ground_truth_set}")
+    #print(f"Lista de candidatos: {candidate_set_clean}")
+
+    hallucination = 0
+
+    for item in lista_rec_clean:
+        if item not in candidate_set_clean:
+            hallucination = 1
+            metrics["hit@5_safe"] = 0
+            metrics["ndcg@5_safe"] = 0
+            metrics["hit@10_safe"] = 0
+            metrics["ndcg@10_safe"] = 0
+            break
+
+    metrics["hallucination"] = hallucination
+
+    #print("metrics")
+    #print(metrics)
 
     return metrics
 
@@ -256,7 +357,10 @@ def calculate_ndcg_new(query, relevants):
     idcg = 0
 
     relevant = relevants[0]
+    #print('Calculo NDCG')
+    #print(f'query: {query} | relevant: {relevant}')
     for i,item in enumerate(query):
+        #print(f'[{i}] - item: {item}')
         idcg += calculate_dcg(1,i+1) if i < len(relevant) else 0 # Calcula o IDCG se houver relevantes, senão, apenas não muda o IDCG já calculado -- a relevância dos itens corretos (ground-truths) é 1 quando existir.
         dcg += calculate_dcg(1,i+1) if relevant in item else 0 # Calcula o DCG se o item recomendado está na lista de relevantes (ground-truths), senão, não muda o DCG -- a relevância dos itens corretos (GT) é 1
     return dcg / idcg

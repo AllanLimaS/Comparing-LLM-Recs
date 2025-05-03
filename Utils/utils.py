@@ -83,7 +83,7 @@ def extract_movie_titles(text):
     return [re.sub(r"^\d+\.\s*", "", line).strip() for line in text.split("\n") if line.strip()]
 
 def clean_movie_name_new(movie):
-    """Remove o ano entre parênteses e converte para uppercase."""
+    """Limpa diversas informações no nome do filme para normalizar"""
 
     movie = movie.upper()
 
@@ -117,7 +117,26 @@ def extract_movie_list(text):
 
     return movies
 
+def clean_movie_name_extra_infos(movie):
+    """ Limpar informações adicionais que podem estar no nome para normalizar e procurar por alucionações """
+    movie = movie.upper()
 
+    # retira tudo que está entre pareteses 
+    movie = re.sub(r"\s*\(.*?\)", "", movie)  
+
+    # retira tudo que está entre colchetes
+    movie = re.sub(r"\s*\[.*?\]", "", movie)  
+
+    # retira tudo que está após ífem
+    movie = re.sub(r"\s*-\s*.*$", "", movie)
+
+    # Corrige títulos que começam com ", The" ou ", A" etc.
+    movie = re.sub(r', (THE|A|AN)$', r'', movie)
+
+    # remove toda ocorrencia de THE
+    movie = movie.replace("THE","")
+
+    return movie.upper()  # Converte para uppercase
 
 def read_json(path: str):
     with open(path) as f:

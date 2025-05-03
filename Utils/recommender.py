@@ -28,14 +28,14 @@ def recommendation_workflow(config, dataset, prompt_template, prompt_format):
 
     try:
 
-        for i in tqdm(id_list, desc="Processando", unit="it"): 
+        for i in tqdm(id_list, desc="Processando", unit="it"):
 
             results[i] = {}
             watched_mv = dataset[i][0].split(' | ')[::-1]
 
             if lenlimit_option == 'ultimos':
                 watched_mv = watched_mv[-lenlimit:]
-                # pega apenas os x ultimos filmes assistidos em ordem cronologica 
+                # pega apenas os x ultimos filmes assistidos em ordem cronologica
                 # exemplo : watched_mv = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j"]
                 # watched_mv[-8:] = ["c", "d", "e", "f", "g", "h", "i", "j"]
             elif lenlimit_option == 'primeiros':
@@ -68,7 +68,7 @@ def recommendation_workflow(config, dataset, prompt_template, prompt_format):
 
             if results[i]['gt_in_candidate_set'] == True:
 
-                # pipeline 
+                # pipeline
 
                 # STEP 1
                 input_1 = prompt_template['Preference'].format(', '.join(watched_mv))
@@ -100,11 +100,10 @@ def recommendation_workflow(config, dataset, prompt_template, prompt_format):
                     results[i]['recommendations'] = recommendations
 
 
-                # Calculate metrics 
-                    run_metrics = metrics.calculate_metrics(results[i]['recommendations'], results[i]['ground_truth'])    
+                # Calculate metrics
+                    run_metrics = metrics.calculate_metrics(results[i]['recommendations'], results[i]['ground_truth'])
                 else:
-                    run_metrics = metrics.calculate_metrics(results[i]['predictions_3'], results[i]['ground_truth'])    
-                
+                    run_metrics = metrics.calculate_metrics(results[i]['predictions_3'], results[i]['ground_truth'])
 
                 results[i]['rec_HitRate@5'] = run_metrics['hit@5']
                 results[i]['rec_HitRate@10'] = run_metrics['hit@10']
@@ -114,7 +113,7 @@ def recommendation_workflow(config, dataset, prompt_template, prompt_format):
                 results[i]['rec_Recall@10'] = run_metrics['recall@10']
                 results[i]['rec_NDCG@5'] = run_metrics['ndcg@5']
                 results[i]['rec_NDCG@10'] = run_metrics['ndcg@10']
-                
+
             else: # Caso o ground_truth não esteja no candidate_set
                 results[i]['input_1'] = ""
                 results[i]['predictions_1'] = ""
@@ -141,6 +140,132 @@ def recommendation_workflow(config, dataset, prompt_template, prompt_format):
 
         # save dictionary to pickle file
         arq_name = utils.save_result_to_pickle(results, config)
+
+    except Exception as e:
+        print(f"Ocorreu um erro: {e}")
+
+    return arq_name
+
+
+def recommendation_workflow_new(config, dataset, prompt_template, prompt_format):
+
+    id_list = list(range(0, len(dataset)))
+
+    # Building indexes and similarity matrices for users and movies.
+    movie_idx = utils.build_moviename_index_dict(dataset)
+    user_sim_matrix = utils.build_user_similarity_matrix(dataset, movie_idx)
+
+    results = {'config': config}
+
+    nsu = config["nsu"]
+    nci = config["nci"]
+    lenlimit = config["lenlimit"]
+    lenlimit_option = config["lenlimit_option"]
+
+    results['start_time'] = time.time()
+
+    if config["test_run"]:
+        id_list = id_list[:config["test_run"]] # Define a quantiadade que será processado
+
+    try:
+
+        for i in tqdm(id_list, desc="Processando", unit="it"):
+
+            results[i] = {}
+            watched_mv = dataset[i][0].split(' | ')[::-1]
+
+            if lenlimit_option == 'ultimos':
+                watched_mv = watched_mv[-lenlimit:]
+                # pega apenas os x ultimos filmes assistidos em ordem cronologica
+                # exemplo : watched_mv = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j"]
+                # watched_mv[-8:] = ["c", "d", "e", "f", "g", "h", "i", "j"]
+            elif lenlimit_option == 'primeiros':
+                watched_mv = watched_mv[:lenlimit]
+                # pega apenas os x primeiros filmes assistidos
+                # exemplo : watched_mv = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j"]
+                # watched_mv[:8] = ["a", "b", "c", "d", "e", "f", "g", "h"]
+            elif lenlimit_option == 'aleatorio':
+                # Pega 8 índices aleatórios e ordena esses índices
+                indices = sorted(random.sample(range(len(watched_mv)), k=min(lenlimit, len(watched_mv))))
+                # Usa os índices pra manter os filmes em ordem
+                watched_mv = [watched_mv[i] for i in indices]
+
+            results[i]['ground_truth'] = dataset[i][-1]
+
+            # Generate candidate items based on user filtering.
+            candidate_items = utils.sort_collaborative_user_filtering(target_user_id=i,
+                                                                    dataset=dataset,
+                                                                    user_similarity_matrix=user_sim_matrix,
+                                                                    num_users=nsu,
+                                                                    num_items=nci,
+                                                                    include_similar_user_GT=False,
+                                                                    debug=False)
+            random.shuffle(candidate_items)
+
+            results[i]['candidate_set'] = candidate_items
+
+            # verifica se o ground_truth está no candidate_set
+            results[i]['gt_in_candidate_set'] = True if any(results[i]['ground_truth'].lower() in candidate.lower() for candidate in results[i]['candidate_set']) else False
+
+            if results[i]['gt_in_candidate_set'] == True:
+
+                # pipeline
+
+                # STEP 1
+                input_1 = prompt_template['Preference'].format(', '.join(watched_mv))
+                results[i]['input_1'] = input_1
+                response = utils.query_lm_studio(config["model_name"],config["Temperature"],prompt_template['System_prompt'],input_1,config["max_tokens"])
+                predictions_1 = response
+                results[i]['predictions_1'] = predictions_1
+
+                # STEP 2
+                input_2 = prompt_template['Featured_movies'].format(', '.join(watched_mv), predictions_1)
+                results[i]['input_2'] = input_2
+                response = utils.query_lm_studio(config["model_name"],config["Temperature"],prompt_template['System_prompt'],input_2,config["max_tokens"])
+                predictions_2 = response
+                results[i]['predictions_2'] = predictions_2
+
+                # STEP 3
+                input_3 = prompt_template['Recommendation'].format(', '.join(candidate_items),', '.join(watched_mv), predictions_1, predictions_2)
+                results[i]['input_3'] = input_3
+                response = utils.query_lm_studio(config["model_name"],config["Temperature"],prompt_template['System_prompt'],input_3,config["max_tokens"])
+                predictions_3 = response
+                results[i]['predictions_3'] = predictions_3
+
+                run_metrics = metrics.calculate_metrics_new(results[i]['predictions_3'], results[i]['ground_truth'],results[i]['candidate_set'])
+                
+                for k in [5,10]:
+                    results[i][f"rec_HitRate@{k}"] = run_metrics[f"hit@{k}"]
+                    results[i][f"rec_NDCG@{k}"] = run_metrics[f"ndcg@{k}"]
+                    results[i][f"rec_HitRate@{k}_safe"] = run_metrics[f"hit@{k}_safe"]
+                    results[i][f"rec_NDCG@{k}_safe"] = run_metrics[f"ndcg@{k}_safe"]
+                results[i][f"rec_Hallucination"] = run_metrics["hallucination"]
+                
+
+            else: # Caso o ground_truth não esteja no candidate_set
+                results[i]['input_1'] = ""
+                results[i]['predictions_1'] = ""
+                results[i]['input_2'] = ""
+                results[i]['predictions_2'] = ""
+                results[i]['input_3'] = ""
+                results[i]['predictions_3'] = ""
+
+                for k in [5,10]:
+                    results[i][f"rec_HitRate@{k}"] = 0
+                    results[i][f"rec_NDCG@{k}"] = 0
+                    results[i][f"rec_HitRate@{k}_safe"] = 0
+                    results[i][f"rec_NDCG@{k}_safe"] = 0
+                results[i][f"rec_Hallucination"] = 0
+
+        results['end_time'] = time.time()
+        results['runtime'] = results['end_time'] - results['start_time']
+
+        # calculate average metrics
+        results['avg_metrics'] = metrics.calculate_average_metrics_new(results)
+
+        # save dictionary to pickle file
+        arq_name = utils.save_result_to_pickle(results, config)
+
 
     except Exception as e:
         print(f"Ocorreu um erro: {e}")

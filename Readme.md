@@ -81,7 +81,7 @@ verificar as possibilidades do finetuning
         guia oficial rocm/amd, pc travou carregando modelo de 1B parametro. 
 
     
-### lista de moedelos 
+## lista de moedelos 
 
     apresentado no TCC2: 
         Llama 3,
@@ -129,6 +129,7 @@ verificar as possibilidades do finetuning
         com realação a configuração: 
             1 - diferença entre prompts (entre os usados anteriormente)
             2 - quantidades de itens do histórico do usuário para o prompt
+            (??) - ordem dos itens da lista de watched movies
 
         com relação aos modelos: (evidenciar uma taxa de alucinação)
             3 - diferença de versões de modelos (entre familias)
@@ -241,7 +242,7 @@ https://www.d2l.ai/chapter_recommender-systems/movielens.html
     mais testes com diferentes metodos de mostrar os filmes assistidos. 
     testes com fine tunning 
 
-## 
+## duvidas
     analisando as diferenças entre os diferentes calculos 
     situações como essa são resolvidas 
 
@@ -302,3 +303,29 @@ https://www.d2l.ai/chapter_recommender-systems/movielens.html
 
     fazer um experimento com o modelo finetunado utilizando apenas o dataset de teste. guardar resultado para documentar. 
 
+# Etapas finais
+
+## anotações importantes
+###
+    considerar os primeiros itens do histórico, e justificar a escolha por causa dos resultados obtidos experimentando diferentes configurações. 
+###
+    esparcidade do dataset movielens
+    https://www.d2l.ai/chapter_recommender-systems/movielens.html
+###
+    comentar sobre como alguns modelos são mais sensiveis a troca de prompts 
+
+    experimentos para comparativo
+
+        com realação a configuração: 
+            1 - diferença entre prompts (entre os usados anteriormente)
+            2 - quantidades de itens do histórico do usuário para o prompt
+            (??) - ordem dos itens da lista de watched movies
+
+        com relação aos modelos: (evidenciar uma taxa de alucinação)
+            3 - diferença de versões de modelos (entre familias)
+            4 - diferença de quantiazação (llama 3.2)
+            5 - diferença de modelos (entre vencedores das familias acima)
+
+        com relação ao dataset e finetunning: 
+            6 - finetuning (definir modelo melhor com base nos exp de cima  "com" e "sem")
+            7 - ml100k e ml1M (entre os usados anteriormente)
