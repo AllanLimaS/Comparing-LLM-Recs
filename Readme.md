@@ -303,6 +303,26 @@ https://www.d2l.ai/chapter_recommender-systems/movielens.html
 
     fazer um experimento com o modelo finetunado utilizando apenas o dataset de teste. guardar resultado para documentar. 
 
+# Orientação 06/05/2025
+
+## duvidas
+
+    Mostrar o excel que fiz 
+
+    falar sobre o experimento 8 (??)
+
+    falar sobre o experimento com um unico prompt. 
+
+    overleaf 
+
+## oq fazer 
+
+    no exp 2, anotar a quantidade média de filmes assitidos no total pelos usuários, para relatar e ter uma noção de volume. 
+    agora com as configurações definidar, rodar os experimentos em todos os modelos antes de rodar os experimentos mais especificos. 
+    merge entre os exp 3 e 5. 
+    para experimentos especificos, utilizar o top 2 modelos encontrados. 
+
+
 # Etapas finais
 
 ## anotações importantes
@@ -329,3 +349,5 @@ https://www.d2l.ai/chapter_recommender-systems/movielens.html
         com relação ao dataset e finetunning: 
             6 - finetuning (definir modelo melhor com base nos exp de cima  "com" e "sem")
             7 - ml100k e ml1M (entre os usados anteriormente)
+
+

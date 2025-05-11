@@ -163,6 +163,52 @@ PROMPT_TEMPLATE_3 = {
 """
 }
 
+PROMPT_TEMPLATE_4 = {
+  "System_prompt": "You are a movie expert. Provide answers to the following tasks based on the given context. If you don't know the answer to a question, please don't share false information.",
+
+  "prompt": """
+    ### MY RECENTLY WATCHED MOVIES (FROM OLDEST TO NEWEST): {}.
+
+    ---
+
+    ### TASK 1: Identify and summarize my movie preferences.
+    (This is contextual information. Do not respond to this task.)
+
+    ---
+
+    ### TASK 2: Select the five most featured movies.
+    (This is contextual information. Do not respond to this task.)
+
+    ---
+
+    ### TASK 3: Recommend 10 new movies.
+    Given the following additional information:
+
+    - CANDIDATE MOVIE SET: {}.
+    - MY MOVIE PREFERENCES (from Task 1).
+    - MY FIVE MOST FEATURED MOVIES (from Task 2).
+
+    Recommend exactly **10 movies** from the "Candidate Movie Set" that are most similar to my "Five Most Featured Movies".
+
+    The output must be **STRICTLY formatted** as follows:
+
+    1. Movie Title  
+    2. Movie Title  
+    3. Movie Title  
+    4. Movie Title  
+    5. Movie Title  
+    6. Movie Title  
+    7. Movie Title  
+    8. Movie Title  
+    9. Movie Title  
+    10. Movie Title  
+
+    Respond **only** to Task 3. Do **not** include any explanation, commentary, or responses to other tasks.
+
+    ### ANSWER:
+    """
+}
+
 TRAIN_TEMPLATE = {
     "INPUT": """
 

@@ -169,7 +169,7 @@ def recommendation_workflow_new(config, dataset, prompt_template, prompt_format)
 
     try:
 
-        for i in tqdm(id_list, desc="Processando", unit="it"):
+        for i in tqdm(id_list, desc="Processando", unit="it", leave=False):
 
             results[i] = {}
             watched_mv = dataset[i][0].split(' | ')[::-1]
@@ -210,29 +210,44 @@ def recommendation_workflow_new(config, dataset, prompt_template, prompt_format)
             if results[i]['gt_in_candidate_set'] == True:
 
                 # pipeline
+                
+                if len(prompt_template.keys()) > 2: # Prompt de 3 etapas
 
-                # STEP 1
-                input_1 = prompt_template['Preference'].format(', '.join(watched_mv))
-                results[i]['input_1'] = input_1
-                response = utils.query_lm_studio(config["model_name"],config["Temperature"],prompt_template['System_prompt'],input_1,config["max_tokens"])
-                predictions_1 = response
-                results[i]['predictions_1'] = predictions_1
+                    # STEP 1
+                    input_1 = prompt_template['Preference'].format(', '.join(watched_mv))
+                    results[i]['input_1'] = input_1
+                    response = utils.query_lm_studio(config["model_name"],config["Temperature"],prompt_template['System_prompt'],input_1,config["max_tokens"])
+                    predictions_1 = response
+                    results[i]['predictions_1'] = predictions_1
 
-                # STEP 2
-                input_2 = prompt_template['Featured_movies'].format(', '.join(watched_mv), predictions_1)
-                results[i]['input_2'] = input_2
-                response = utils.query_lm_studio(config["model_name"],config["Temperature"],prompt_template['System_prompt'],input_2,config["max_tokens"])
-                predictions_2 = response
-                results[i]['predictions_2'] = predictions_2
+                    # STEP 2
+                    input_2 = prompt_template['Featured_movies'].format(', '.join(watched_mv), predictions_1)
+                    results[i]['input_2'] = input_2
+                    response = utils.query_lm_studio(config["model_name"],config["Temperature"],prompt_template['System_prompt'],input_2,config["max_tokens"])
+                    predictions_2 = response
+                    results[i]['predictions_2'] = predictions_2
 
-                # STEP 3
-                input_3 = prompt_template['Recommendation'].format(', '.join(candidate_items),', '.join(watched_mv), predictions_1, predictions_2)
-                results[i]['input_3'] = input_3
-                response = utils.query_lm_studio(config["model_name"],config["Temperature"],prompt_template['System_prompt'],input_3,config["max_tokens"])
-                predictions_3 = response
-                results[i]['predictions_3'] = predictions_3
+                    # STEP 3
+                    input_3 = prompt_template['Recommendation'].format(', '.join(candidate_items),', '.join(watched_mv), predictions_1, predictions_2)
+                    results[i]['input_3'] = input_3
+                    response = utils.query_lm_studio(config["model_name"],config["Temperature"],prompt_template['System_prompt'],input_3,config["max_tokens"])
+                    predictions_3 = response
+                    results[i]['predictions_3'] = predictions_3
+                    final_predictions = predictions_3
 
-                run_metrics = metrics.calculate_metrics_new(results[i]['predictions_3'], results[i]['ground_truth'],results[i]['candidate_set'])
+                else: # prompt de 1 etapa
+                    input_1 = prompt_template['prompt'].format(', '.join(watched_mv),', '.join(candidate_items))
+                    results[i]['input_1'] = input_1
+                    response = utils.query_lm_studio(config["model_name"],config["Temperature"],prompt_template['System_prompt'],input_1,config["max_tokens"])
+                    predictions_1 = response
+                    results[i]['predictions_1'] = predictions_1
+                    results[i]['input_2'] = ""
+                    results[i]['predictions_2'] = ""
+                    results[i]['input_3'] = ""
+                    results[i]['predictions_3'] = ""
+                    final_predictions = predictions_1
+
+                run_metrics = metrics.calculate_metrics_new(final_predictions, results[i]['ground_truth'],results[i]['candidate_set'])
                 
                 for k in [5,10]:
                     results[i][f"rec_HitRate@{k}"] = run_metrics[f"hit@{k}"]

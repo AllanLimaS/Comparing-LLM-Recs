@@ -63,8 +63,11 @@ def query_lm_studio(model, temp, sytem_prompt, prompt, max_tokens):
 def save_result_to_pickle(results,config):
     # Gera um timestamp para garantir nomes únicos
     timestamp = datetime.now().strftime('%Y_%m_%d-%H_%M_%S')
-    arq_name = f'{config["dataset"]}-zs-nir-su{config['nsu']}-ci{config['nci']}-{config["model_name"]}-{timestamp}.pkl'
-    arq_name = f'{config["dataset"]}-{config["model_name"]}-{timestamp}.pkl'
+    #arq_name = f'{config["dataset"]}-zs-nir-su{config['nsu']}-ci{config['nci']}-{config["model_name"]}-{timestamp}.pkl'
+    arq_name = f'{config["dataset"]}-{config["model_name"]}-{timestamp}'
+    ## substituir os caracteres especiais por "_"
+    arq_name = re.sub(r'[^a-zA-Z0-9_-]', '_', arq_name) + ".pkl"
+   #arq_name = f'{config["dataset"]}-{config["model_name"]}-{timestamp}.pkl'
     with open(f'Results/{arq_name}', 'wb') as file:
         pickle.dump(results, file)
     return f'Results/{arq_name}'
