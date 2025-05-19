@@ -217,21 +217,21 @@ def recommendation_workflow_new(config, dataset, prompt_template, prompt_format)
                     input_1 = prompt_template['Preference'].format(', '.join(watched_mv))
                     results[i]['input_1'] = input_1
                     response = utils.query_lm_studio(config["model_name"],config["Temperature"],prompt_template['System_prompt'],input_1,config["max_tokens"])
-                    predictions_1 = response
+                    predictions_1 = utils.clean_thinking(response)
                     results[i]['predictions_1'] = predictions_1
 
                     # STEP 2
                     input_2 = prompt_template['Featured_movies'].format(', '.join(watched_mv), predictions_1)
                     results[i]['input_2'] = input_2
                     response = utils.query_lm_studio(config["model_name"],config["Temperature"],prompt_template['System_prompt'],input_2,config["max_tokens"])
-                    predictions_2 = response
+                    predictions_2 = utils.clean_thinking(response)
                     results[i]['predictions_2'] = predictions_2
 
                     # STEP 3
                     input_3 = prompt_template['Recommendation'].format(', '.join(candidate_items),', '.join(watched_mv), predictions_1, predictions_2)
                     results[i]['input_3'] = input_3
                     response = utils.query_lm_studio(config["model_name"],config["Temperature"],prompt_template['System_prompt'],input_3,config["max_tokens"])
-                    predictions_3 = response
+                    predictions_3 = utils.clean_thinking(response)
                     results[i]['predictions_3'] = predictions_3
                     final_predictions = predictions_3
 
@@ -239,7 +239,7 @@ def recommendation_workflow_new(config, dataset, prompt_template, prompt_format)
                     input_1 = prompt_template['prompt'].format(', '.join(watched_mv),', '.join(candidate_items))
                     results[i]['input_1'] = input_1
                     response = utils.query_lm_studio(config["model_name"],config["Temperature"],prompt_template['System_prompt'],input_1,config["max_tokens"])
-                    predictions_1 = response
+                    predictions_1 = utils.clean_thinking(response)
                     results[i]['predictions_1'] = predictions_1
                     results[i]['input_2'] = ""
                     results[i]['predictions_2'] = ""

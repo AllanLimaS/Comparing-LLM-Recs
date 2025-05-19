@@ -322,6 +322,19 @@ https://www.d2l.ai/chapter_recommender-systems/movielens.html
     merge entre os exp 3 e 5. 
     para experimentos especificos, utilizar o top 2 modelos encontrados. 
 
+# Orientação 12/05/2025
+
+## oq fazer 
+
+    leitura geral do tcc2 entregue, antes de continuar a escrita do projeto 
+    revisar anotações da banca do tcc2 ( enviado pelo professor e procurar outra tbm, provavelmente email)
+
+    continuar os experimentos 
+
+    fazer um experimento calculando o tamanho médio dos prompts que são utilizados durante o experimento 
+    fazer um experimento para identificar o limite de tokens que o hardware disponível aguenta. 
+
+    Adicionar ao texto o relato que foi testado o modelo llama 3.1 1b com uma quantização muito forte de q2, nao foi possível realizar o experimento com esse modelo, pois ele fazia respostas extremamente grandes (mais de 10k de tokens)
 
 # Etapas finais
 
@@ -351,3 +364,28 @@ https://www.d2l.ai/chapter_recommender-systems/movielens.html
             7 - ml100k e ml1M (entre os usados anteriormente)
 
 
+# Orientação 19/05/2025
+
+## Oq Fazer 
+
+    continuar os experimentos 
+
+    fazer um experimento calculando o tamanho médio dos prompts que são utilizados durante o experimento 
+    fazer um experimento para identificar o limite de tokens que o hardware disponível aguenta. 
+
+    Adicionar ao texto o relato que foi testado o modelo llama 3.1 1b com uma quantização muito forte de q2, nao foi possível realizar o experimento com esse modelo, pois ele fazia respostas extremamente grandes (mais de 10k de tokens)
+
+    relatar o teste com qwen 3 
+
+    comentar no texto sobre a formatação dos prompts feitos pelo LM studio 
+
+    tentar fazer um gráfico de barras empilhadas/layers para juntar o cenario 2 em um gráfico só. 
+
+
+    tabelão: 
+        Fazer um tabelão comparando o resultado com e sem alucinação 
+            adicionar nessa comparação inicial os resultados do cenário 1. 
+        fazer outro tabelão mostrando só o resultado sem alucinal~çao 
+
+
+    arrumar gráfico cenarío 2 que está empilhando as métricasd 

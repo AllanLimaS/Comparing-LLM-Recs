@@ -85,8 +85,22 @@ def extract_movie_titles(text):
     """Extrai os títulos dos filmes removendo a numeração"""
     return [re.sub(r"^\d+\.\s*", "", line).strip() for line in text.split("\n") if line.strip()]
 
+def clean_thinking(response):
+
+    end_thinking = "</think>"
+    indice = response.find(end_thinking)
+    if indice != -1:
+        response =  response[indice+len(end_thinking):].strip()
+
+    return response
+
 def clean_movie_name_new(movie):
     """Limpa diversas informações no nome do filme para normalizar"""
+
+    # Remove todo o texto que está antes do '1.'
+    indice = movie.find("1.")
+    if indice != -1:
+        movie =  movie[indice:].strip()
 
     movie = movie.upper()
 
@@ -301,3 +315,38 @@ def sort_collaborative_user_filtering(target_user_id, dataset, user_similarity_m
     if debug: print(f'Candidatos da UF para o usuário `{target_user_id}` com o score de similaridade: ',candidate_pairs)
     candidate_items = [e[0] for e in candidate_pairs][:num_items]
     return candidate_items
+
+def total_users_and_gt_users(config):
+    """ Retorna o número total de usuários e o número de usuários com ground truth no dataset."""
+
+    # load movie lens 100k dataset
+    dataset = read_json(f"Data/{config['dataset']}.json")
+    nsu = config["nsu"] 
+    nci = config["nci"] 
+
+    id_list = list(range(0, len(dataset)))
+
+    users_with_gt = 0 
+    users = len(id_list)
+
+    movie_idx = build_moviename_index_dict(dataset)
+    user_sim_matrix = build_user_similarity_matrix(dataset, movie_idx)
+
+
+    for i in id_list:
+
+        ground_truth = dataset[i][-1]
+
+        candidate_items = sort_collaborative_user_filtering(target_user_id=i,
+                                                                        dataset=dataset,
+                                                                        user_similarity_matrix=user_sim_matrix,
+                                                                        num_users=nsu,
+                                                                        num_items=nci,
+                                                                        include_similar_user_GT=False,
+                                                                        debug=False)
+        
+        #verifica se o ground_truth está no candidate_set
+        if any(ground_truth.lower() in candidate.lower() for candidate in candidate_items):
+            users_with_gt += 1
+
+    return users, users_with_gt

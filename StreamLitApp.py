@@ -227,11 +227,6 @@ df_configs_sorted["runtime_minutes"] = df_configs_sorted["runtime_seconds"] / 60
 # Adiciona coluna formatada com ' mins'
 df_configs_sorted["runtime_text"] = df_configs_sorted["runtime_minutes"].map(lambda x: f"{x:.2f} mins")
 
-# Usa o nome do experimento como categoria no eixo Y
-#df_configs_sorted["experimento"] = df_configs_sorted.index.astype(str)
-
-
-
 # Altura proporcional
 chart_height = 100 * len(df_configs_sorted)
 
@@ -295,7 +290,7 @@ st.altair_chart(chart, use_container_width=True)
 
 ### GRAFICO DE TEMPO DE EXECUÇÂO ####
 
-### TABELA MÉTRICAS ####
+### TABELA MÉTRICAS - INICIO ####
 
 st.subheader("📋 Tabela Comparativa de Métricas")
 
@@ -332,10 +327,65 @@ with col2:
         df_exp_metrics.style.apply(highlight_max, axis=0),
         use_container_width=True
     )
-### TABELA MÉTRICAS ####
+### TABELA MÉTRICAS - FIM ####
 
 
-### GRÁFICOS PARA MÉTRICAS ###
+### DEFINIÇÃO DE CENÁRIOS - INICIO ###
+
+def plot_bar_chart_cenario(df_plot, total_users):
+    bar = (
+        alt.Chart(df_plot)
+        .mark_bar()
+        .encode(
+            x=alt.X('Contagem:Q',
+                    scale=alt.Scale(domain=[0, total_users]),
+                    title='Número de Usuários'),
+            y=alt.Y('Cenario:N', title=None),
+            color=alt.Color('Cenario:N', legend=alt.Legend(title="Cenário"))
+        )
+    )
+
+    text = (
+        alt.Chart(df_plot)
+        .mark_text(    align="left",
+    baseline="middle",
+    dx=3,   
+    dy=3,   
+    fontSize=16,
+    color="white",)
+        .encode(
+            x='Contagem:Q',
+            y='Cenario:N',
+            text='Contagem:Q'
+        )
+    )
+
+    chart = (bar + text).properties(width=600, height=150)
+
+    st.altair_chart(chart)
+
+total_users = 943
+gt_users = 152
+
+df_gt_users = pd.DataFrame({
+    'Cenario': ['1: Todos usuários','2: Usuários com GT'],
+    'Contagem': [total_users,gt_users]
+})
+
+st.title("Descrição dos Cenários")
+
+# Texto explicativo
+percentage = gt_users / total_users * 100
+st.write("O cenário 2 contempla apenas os usuários com **ground truth** (GT) dentro da lista itens candidatos.")
+st.write(f"**{gt_users} de {total_users} usuários** possuem ground truth ({percentage:.1f}%)")
+
+plot_bar_chart_cenario(df_gt_users, total_users)
+
+
+### DEFINIÇÃO DE CENÁRIOS - FIM ###
+
+
+### GRÁFICOS PARA MÉTRICAS - INICIO ###
 
 def plot_bar_chart_vega(df_plot, title):
     st.markdown(f"### {title}")
@@ -445,28 +495,27 @@ with col1:
     if metrics_gt:
         df_gt = df_exp_metrics[metrics_gt]
         df_gt["cor"] = df_gt.index.map(lambda exp: experiment_colors.get(exp, "#000"))
-        plot_bar_chart_vega(df_gt, "Métricas com GT")
-
+        plot_bar_chart_vega(df_gt, "Cenário 2")
 
 
     if metrics_hallucination:
         df_hallucination = df_exp_metrics[metrics_hallucination]
         df_hallucination["cor"] = df_hallucination.index.map(lambda exp: experiment_colors.get(exp, "#000"))
-        plot_bar_chart_vega_halluci(df_hallucination, "Alucinação")
+        plot_bar_chart_vega_halluci(df_hallucination, "Cenário 2: Alucinação")
 
 with col2:
 
     if metrics_safe:
         df_safe = df_exp_metrics[metrics_safe]
         df_safe["cor"] = df_safe.index.map(lambda exp: experiment_colors.get(exp, "#000"))
-        plot_bar_chart_vega(df_safe, "Métricas sem alucinação")
+        plot_bar_chart_vega(df_safe, "Cenário 2: Sem alucinação")
 
     if metrics_normal:
         df_normal = df_exp_metrics[metrics_normal]
         df_normal["cor"] = df_normal.index.map(lambda exp: experiment_colors.get(exp, "#000"))
-        plot_bar_chart_vega(df_normal, "Métricas sem GT")
+        plot_bar_chart_vega(df_normal, "Cenário 1")
 
-### GRÁFICOS PARA MÉTRICAS ###
+### GRÁFICOS PARA MÉTRICAS - FIM ###
 
 # Download CSV
 csv = df_exp_metrics.to_csv().encode("utf-8")

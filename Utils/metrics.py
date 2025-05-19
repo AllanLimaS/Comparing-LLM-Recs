@@ -240,6 +240,82 @@ def calculate_metrics_new(query, relevants, candidate_set):
 
     return metrics
 
+def calculate_metrics_new_real(query, relevants, candidate_set):
+    """
+    Calcula as métricas de precisão, recall, hit e ndcg para @5 e @10.
+    
+    Args:
+    - query (list): Lista de itens recomendados (ordenados por relevância).
+    - relevants (str): String de item relevante.
+    
+    Returns:
+    - dict: Dicionário com as métricas calculadas para @5 e @10.
+    """
+
+
+    #print(f"query: {query}")
+    # Remove todo o texto que está antes do '1.'
+    indice = query.find("1.")
+    if indice != -1:
+        query =  query[indice:].strip()
+    #print(f"query com texto limpo antes de 1.: {query}")
+
+    metrics = {}
+
+    for k in [5, 10]:
+        metrics[f"hit@{k}"] = 0
+        metrics[f"ndcg@{k}"] = 0
+        metrics[f"hit@{k}_safe"] = 0
+        metrics[f"ndcg@{k}_safe"] = 0
+
+
+
+    query = clean_movie_name_new(query)
+    lista_rec = extract_movie_list(query)
+
+    ground_truth_set = [clean_movie_name_new(relevants)]
+
+ 
+    for k in [5, 10]:
+
+        recommendations_set = list(lista_rec)[:k]
+
+        hit = calculate_hit_new(recommendations_set, ground_truth_set)
+        ndcg = calculate_ndcg_new(recommendations_set, ground_truth_set)
+
+        metrics[f"hit@{k}"] = hit
+        metrics[f"ndcg@{k}"] = ndcg
+        metrics[f"hit@{k}_safe"] = hit
+        metrics[f"ndcg@{k}_safe"] = ndcg
+
+    # Verifica se os itens recomendados estão no conjunto de candidatos
+
+    candidate_set_clean = [clean_movie_name_extra_infos(movie) for movie in candidate_set]
+    lista_rec_clean = [clean_movie_name_extra_infos(movie) for movie in lista_rec]
+   
+    #print(f"Lista de recomendações: {lista_rec_clean}")
+    #print(f"Lista de relevantes: {ground_truth_set}")
+    #print(f"Lista de candidatos: {candidate_set_clean}")
+
+    hallucination = 0
+
+    for item in lista_rec_clean:
+        if item not in candidate_set_clean:
+            #print(f"lista recomdendada: {lista_rec_clean}")
+            #print(f"Item {item} não está no conjunto de candidatos.{candidate_set_clean}")
+            hallucination = 1
+            metrics["hit@5_safe"] = 0
+            metrics["ndcg@5_safe"] = 0
+            metrics["hit@10_safe"] = 0
+            metrics["ndcg@10_safe"] = 0
+            break
+
+    metrics["hallucination"] = hallucination
+
+    #print("metrics")
+    #print(metrics)
+
+    return metrics
 
 def calculate_hit(query, relevants):
     """
