@@ -7,7 +7,7 @@ import pickle
 import re
 import time
 
-def query_lm_studio(model, temp, sytem_prompt, prompt, max_tokens):
+def query_lm_studio(model, temp, sytem_prompt, prompt, max_tokens, return_tokens_count= False):
 
     API_URL = "http://localhost:1234/v1/chat/completions"
 
@@ -39,7 +39,10 @@ def query_lm_studio(model, temp, sytem_prompt, prompt, max_tokens):
             response = requests.post(API_URL, headers=headers, json=payload, timeout=timeout)
 
             if response.status_code == 200:
-                return response.json()["choices"][0]["message"]["content"].strip()
+                if return_tokens_count:
+                    return response.json()["choices"][0]["message"]["content"].strip(), response.json()["usage"]["total_tokens"]
+                else:
+                    return response.json()["choices"][0]["message"]["content"].strip()
 
             elif response.status_code == 404:
                 print(f"[Tentativa {attempt+1}/{retries}] Modelo ainda não carregado? Erro 400. Aguardando {delay}s...")

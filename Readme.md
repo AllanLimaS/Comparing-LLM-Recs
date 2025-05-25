@@ -370,14 +370,14 @@ https://www.d2l.ai/chapter_recommender-systems/movielens.html
 
     continuar os experimentos 
 
-    fazer um experimento calculando o tamanho médio dos prompts que são utilizados durante o experimento 
+    [ok] fazer um experimento calculando o tamanho médio dos prompts que são utilizados durante o experimento 
     fazer um experimento para identificar o limite de tokens que o hardware disponível aguenta. 
 
-    Adicionar ao texto o relato que foi testado o modelo llama 3.1 1b com uma quantização muito forte de q2, nao foi possível realizar o experimento com esse modelo, pois ele fazia respostas extremamente grandes (mais de 10k de tokens)
+    [ok] Adicionar ao texto o relato que foi testado o modelo llama 3.1 1b com uma quantização muito forte de q2, nao foi possível realizar o experimento com esse modelo, pois ele fazia respostas extremamente grandes (mais de 10k de tokens)
 
     relatar o teste com qwen 3 
 
-    comentar no texto sobre a formatação dos prompts feitos pelo LM studio 
+    [ok] comentar no texto sobre a formatação dos prompts feitos pelo LM studio 
 
     tentar fazer um gráfico de barras empilhadas/layers para juntar o cenario 2 em um gráfico só. 
 
@@ -388,4 +388,13 @@ https://www.d2l.ai/chapter_recommender-systems/movielens.html
         fazer outro tabelão mostrando só o resultado sem alucinal~çao 
 
 
-    arrumar gráfico cenarío 2 que está empilhando as métricasd 
+    [ok] arrumar gráfico cenarío 2 que está empilhando as métricasd 
+
+
+# Orientação xx/05/2025
+
+## duvidas
+
+    chamar o cenário 2: sem alucinção de "cenário 3"??
+
+    

@@ -167,6 +167,10 @@ def recommendation_workflow_new(config, dataset, prompt_template, prompt_format)
     if config["test_run"]:
         id_list = id_list[:config["test_run"]] # Define a quantiadade que será processado
 
+
+    total_tokens = 0 
+    count  = 0
+
     try:
 
         for i in tqdm(id_list, desc="Processando", unit="it", leave=False):
@@ -230,10 +234,14 @@ def recommendation_workflow_new(config, dataset, prompt_template, prompt_format)
                     # STEP 3
                     input_3 = prompt_template['Recommendation'].format(', '.join(candidate_items),', '.join(watched_mv), predictions_1, predictions_2)
                     results[i]['input_3'] = input_3
-                    response = utils.query_lm_studio(config["model_name"],config["Temperature"],prompt_template['System_prompt'],input_3,config["max_tokens"])
+                    response,tokens = utils.query_lm_studio(config["model_name"],config["Temperature"],prompt_template['System_prompt'],input_3,config["max_tokens"], return_tokens_count= True)
                     predictions_3 = utils.clean_thinking(response)
                     results[i]['predictions_3'] = predictions_3
                     final_predictions = predictions_3
+
+                    total_tokens += tokens
+                    count += 1
+
 
                 else: # prompt de 1 etapa
                     input_1 = prompt_template['prompt'].format(', '.join(watched_mv),', '.join(candidate_items))
@@ -281,7 +289,10 @@ def recommendation_workflow_new(config, dataset, prompt_template, prompt_format)
         # save dictionary to pickle file
         arq_name = utils.save_result_to_pickle(results, config)
 
-
+        avg_tokens = total_tokens / count if count > 0 else 0
+        print(f"Total de tokens: {total_tokens}")
+        print(f"Média de tokens: {avg_tokens}")
+        print(f"Total de execuções: {count}")
     except Exception as e:
         print(f"Ocorreu um erro: {e}")
 

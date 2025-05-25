@@ -164,7 +164,7 @@ if not selected_metrics:
 metrics_gt = [m for m in selected_metrics if "GT" in m and "Hallucination" not in m and "safe" not in m]
 metrics_normal = [m for m in selected_metrics if "GT" not in m and "safe" not in m]
 metrics_hallucination = [m for m in selected_metrics if "Hallucination" in m]
-metrics_safe = [m for m in selected_metrics if "safe" in m]
+metrics_safe = [m for m in selected_metrics if "GT" in m and "safe" in m]
 
 #### SIDE BAR ####
 
@@ -303,6 +303,9 @@ exp_metrics_filtered = {
 }
 df_exp_metrics = pd.DataFrame(exp_metrics_filtered).T
 df_exp_metrics = df_exp_metrics.sort_index()
+
+
+###################################################################
 
 
 # Coluna 1: Cor do experimento

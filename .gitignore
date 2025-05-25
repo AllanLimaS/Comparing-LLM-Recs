@@ -8,6 +8,6 @@ __pycache__/
 .~lock*
 
 # files in result folder
-Results/*
+Results/Originais/*
 ```
 wandb
