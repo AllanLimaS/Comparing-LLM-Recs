@@ -125,6 +125,20 @@ class LlamaModels:
         "Evaluation Batch Size": 512,
         "Flash Attention": False,
         }
+    
+    @staticmethod
+    def llama_3_2_3b_instruct_Q4_K_M_FN():
+        return{
+        "model_name" :"gemma_3_4b_ft_allan", # o nome do modelo está errado
+        "Arch" : "llama",
+        "Quantization" : "Q4_K_M",
+        "Temperature": 0.0,
+        "max_tokens" : 4096,
+        "GPU Offload": 28,
+        "CPU Thread Pool Size": 6,
+        "Evaluation Batch Size": 512,
+        "Flash Attention": False,
+        }
 
     @staticmethod
     def llama_3_8b_instruct_Q4_K_M():

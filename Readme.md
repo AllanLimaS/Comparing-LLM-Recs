@@ -397,4 +397,28 @@ https://www.d2l.ai/chapter_recommender-systems/movielens.html
 
     chamar o cenário 2: sem alucinção de "cenário 3"??
 
-    
+    focar mais no detalhamento e analise do primeiro experimento. 
+
+tabela 1 
+ajustar a nomenclatura 
+adicionar @5 
+comentar bastante sobre o NDCG 
+
+
+entre a tabela 1 e 2 
+falar um pouco sobre a relação do HR e NDCG
+
+tabelão 2 
+talvez não usar o tabelão 2, caso desnecssário 
+usar cenário 1 e cenário 2* apenas 
+usar apenas HR
+
+combinar gráfico de tempo de execução com alucinação. 
+
+confirmar calculo do NDCG 
+investigar pq o NDCG 5 nao altera para o 10 
+
+informações repetidas, como diferença de resultado do HR5 pro HR10, nao precisam ser explicadas mais de 1 vez, caso nao houver nenhum comportamento diferente 
+
+
+passar a explicação do recorte do dataset (cenários) para dentro da subceção dataset 

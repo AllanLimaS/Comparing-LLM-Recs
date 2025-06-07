@@ -419,24 +419,14 @@ def calculate_ndcg(query, relevants):
 
 def calculate_ndcg_new(query, relevants):
     """
-    Essa função calcula o Normalized Discounted Cumulative Gain (nDCG), que é a versão normalizada do DCG para comparar listas de recomendações de diferentes tamanhos.
-    
-    Como funciona:
-
-    1 - Calcula o DCG, que mede a qualidade da ordenação das recomendações.
-
-    2 - Calcula o IDCG (Ideal DCG), que é o DCG da melhor ordenação possível (todos os itens relevantes no topo).
-
-    3 - Retorna a normalização nDCG = DCG / IDCG.
+    query = lista de itens recomendados (ordenados por relevância).
+    relevants = lista de itens relevantes (ground-truths).
     """
     dcg = 0
     idcg = 0
 
     relevant = relevants[0]
-    #print('Calculo NDCG')
-    #print(f'query: {query} | relevant: {relevant}')
     for i,item in enumerate(query):
-        #print(f'[{i}] - item: {item}')
-        idcg += calculate_dcg(1,i+1) if i < len(relevant) else 0 # Calcula o IDCG se houver relevantes, senão, apenas não muda o IDCG já calculado -- a relevância dos itens corretos (ground-truths) é 1 quando existir.
+        idcg += calculate_dcg(1,i+1) if i < len(relevants) else 0 # Calcula o IDCG se houver relevantes, senão, apenas não muda o IDCG já calculado -- a relevância dos itens corretos (ground-truths) é 1 quando existir.
         dcg += calculate_dcg(1,i+1) if relevant in item else 0 # Calcula o DCG se o item recomendado está na lista de relevantes (ground-truths), senão, não muda o DCG -- a relevância dos itens corretos (GT) é 1
     return dcg / idcg
